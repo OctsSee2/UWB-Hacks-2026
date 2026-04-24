@@ -12,7 +12,16 @@
         "https://www.target.com/*",
         "https://www.walmart.com/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "config.js",
+        "state.js",
+        "utils.js",
+        "scraper.js",
+        "emissions.js",
+        "drag.js",
+        "ui.js",
+        "content.js"
+      ],
       "css": ["styles.css"]
     }
   ]
