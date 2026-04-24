@@ -1,36 +1,43 @@
-const isAllowedSite = CarbonCartConfig.allowedSites.some((site) =>
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { CarbonCartApp } from "./App";
+import { allowedSites, mountId } from "./config";
+import { getProductTitle } from "./scraper";
+import { contentState } from "./state";
+
+const isAllowedSite = allowedSites.some((site) =>
   window.location.hostname.includes(site)
 );
 
 if (!isAllowedSite) {
-  document.getElementById(CarbonCartConfig.mountId)?.remove();
+  unmountCarbonCart();
 } else {
   initializeCarbonCart();
 }
 
 function initializeCarbonCart() {
-  if (CarbonCartState.initialized) return;
-  CarbonCartState.initialized = true;
+  if (contentState.initialized) return;
+  contentState.initialized = true;
 
   const refresh = () => {
     const onProductPage = isLikelyProductPage();
     if (!onProductPage) {
-      document.getElementById(CarbonCartConfig.mountId)?.remove();
-      CarbonCartState.lastMountedTitle = "";
+      unmountCarbonCart();
+      contentState.lastMountedTitle = "";
       return;
     }
 
     const title = getProductTitle();
-    const existing = document.getElementById(CarbonCartConfig.mountId);
-    if (!existing || title !== CarbonCartState.lastMountedTitle) {
+    const existing = document.getElementById(mountId);
+    if (!existing || title !== contentState.lastMountedTitle) {
       mountCarbonCart(title);
-      CarbonCartState.lastMountedTitle = title;
+      contentState.lastMountedTitle = title;
     }
   };
 
   const scheduleRefresh = () => {
-    clearTimeout(CarbonCartState.refreshTimer);
-    CarbonCartState.refreshTimer = setTimeout(refresh, 160);
+    clearTimeout(contentState.refreshTimer);
+    contentState.refreshTimer = setTimeout(refresh, 160);
   };
 
   const start = () => {
@@ -49,8 +56,8 @@ function initializeCarbonCart() {
     window.addEventListener("hashchange", scheduleRefresh);
 
     setInterval(() => {
-      if (window.location.href !== CarbonCartState.lastUrl) {
-        CarbonCartState.lastUrl = window.location.href;
+      if (window.location.href !== contentState.lastUrl) {
+        contentState.lastUrl = window.location.href;
         scheduleRefresh();
       }
     }, 800);
@@ -61,6 +68,28 @@ function initializeCarbonCart() {
   } else {
     start();
   }
+}
+
+function mountCarbonCart(productTitle) {
+  unmountCarbonCart();
+
+  const rootElement = document.createElement("div");
+  rootElement.id = mountId;
+  rootElement.className = "cc-root cc-fixed";
+  document.body.appendChild(rootElement);
+
+  contentState.reactRoot = createRoot(rootElement);
+  contentState.reactRoot.render(<CarbonCartApp productTitle={productTitle} />);
+}
+
+function unmountCarbonCart() {
+  const rootElement = document.getElementById(mountId);
+  if (contentState.reactRoot) {
+    contentState.reactRoot.unmount();
+    contentState.reactRoot = null;
+  }
+
+  rootElement?.remove();
 }
 
 function isLikelyProductPage() {

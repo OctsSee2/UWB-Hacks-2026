@@ -1,6 +1,9 @@
+import { bubblePositionKey } from "./config";
+import { clamp } from "./utils";
+
 function readBubblePosition() {
   try {
-    const raw = localStorage.getItem(CarbonCartConfig.bubblePositionKey);
+    const raw = localStorage.getItem(bubblePositionKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (typeof parsed?.left === "number" && typeof parsed?.top === "number") {
@@ -14,10 +17,7 @@ function readBubblePosition() {
 }
 
 function writeBubblePosition(left, top) {
-  localStorage.setItem(
-    CarbonCartConfig.bubblePositionKey,
-    JSON.stringify({ left, top })
-  );
+  localStorage.setItem(bubblePositionKey, JSON.stringify({ left, top }));
 }
 
 function getClampedPosition(left, top, badge) {
@@ -38,7 +38,7 @@ function applyBubblePosition(root, left, top) {
   root.style.bottom = "auto";
 }
 
-function setupDraggableBubble(root, badge, onDragEnd) {
+export function setupDraggableBubble(root, badge, onDragEnd) {
   const saved = readBubblePosition();
   if (saved) {
     const clamped = getClampedPosition(saved.left, saved.top, badge);
@@ -112,4 +112,12 @@ function setupDraggableBubble(root, badge, onDragEnd) {
   badge.addEventListener("pointerup", onPointerUp);
   badge.addEventListener("pointercancel", onPointerUp);
   window.addEventListener("resize", onResize);
+
+  return () => {
+    badge.removeEventListener("pointerdown", onPointerDown);
+    badge.removeEventListener("pointermove", onPointerMove);
+    badge.removeEventListener("pointerup", onPointerUp);
+    badge.removeEventListener("pointercancel", onPointerUp);
+    window.removeEventListener("resize", onResize);
+  };
 }

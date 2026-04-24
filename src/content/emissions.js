@@ -1,4 +1,4 @@
-function getDemoAnalysisData(productData) {
+export function getDemoAnalysisData(productData) {
   return {
     // Real scraped product data.
     productTitle: productData.title,
