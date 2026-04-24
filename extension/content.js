@@ -1,3 +1,19 @@
+const allowedSites = ["amazon.com", "target.com", "walmart.com"];
+
+const isAllowedSite = allowedSites.some(site =>
+  window.location.hostname.includes(site)
+);
+
+if (!isAllowedSite) {
+  document.getElementById("carbon-cart-card")?.remove();
+} else {
+  setTimeout(() => {
+    const title = getProductTitle();
+    console.log("CarbonCart detected title:", title);
+    createCard(title);
+  }, 1500);
+}
+
 function getProductTitle() {
   return (
     document.querySelector("#productTitle")?.innerText ||
