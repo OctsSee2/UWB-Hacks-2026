@@ -166,7 +166,7 @@ function mountCarbonCart(productTitle) {
       </div>
     </button>
 
-    <section class="cc-popup-shell cc-hidden" aria-live="polite">
+    <section class="cc-popup-shell" aria-live="polite">
       <div class="cc-popup-pointer"></div>
       <div class="cc-popup">
         <div class="cc-header">
@@ -333,6 +333,18 @@ function mountCarbonCart(productTitle) {
   document.body.appendChild(root);
 
   wireInteractions(root);
+
+  requestAnimationFrame(() => {
+    root.querySelectorAll(".cc-progress-fill").forEach((bar) => {
+      const target = bar.style.width;
+      bar.style.transition = "none";
+      bar.style.width = "0";
+      requestAnimationFrame(() => {
+        bar.style.transition = "";
+        bar.style.width = target;
+      });
+    });
+  });
 }
 
 function clamp(value, min, max) {
@@ -485,21 +497,21 @@ function wireInteractions(root) {
   };
 
   const openPopup = (view = "analysis") => {
-    popup?.classList.remove("cc-hidden");
+    popup?.classList.add("cc-popup-visible");
     root.classList.add("cc-open");
     setView(view);
   };
 
   const closePopup = () => {
-    popup?.classList.add("cc-hidden");
+    popup?.classList.remove("cc-popup-visible");
     root.classList.remove("cc-open");
   };
 
   badge?.addEventListener("click", () => {
     if (Date.now() < suppressToggleUntil) return;
 
-    const hidden = popup?.classList.contains("cc-hidden");
-    if (hidden) {
+    const isOpen = popup?.classList.contains("cc-popup-visible");
+    if (!isOpen) {
       openPopup("analysis");
     } else {
       closePopup();
