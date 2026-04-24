@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "CarbonCart",
+  "version": "1.0",
+  "description": "Shows estimated product emissions while shopping online.",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://*/*"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.amazon.com/*",
+        "https://www.target.com/*",
+        "https://www.walmart.com/*",
+        "https://www.google.com/*"
+      ],
+      "js": ["test.js"]//,
+      // "css": ["styles.css"]
+    }
+  ]
+}
+// {
+//   "version": "0.0.1",
+//   "manifest_version": 3,
+//   "name": "CarbonCart",
+//   "description": "Shows established product emissions while shopping online.",
+//   "host_permissions": ["<all_urls>"],
+//   "content_scripts": [
+//     {
+//       "matches": ["<all_urls>"],
+//       // "js": ["./build/bundle.js"],
+//       "js": ["./test.js"],
+//       "css": ["./src/App.css"]
+//     }
+//   ]
+//   // "action": {
+//   //   "default_popup": "js/index.html",
+//   //   "default_title": "CarbonCart Extension"
+//   // }
+// }
