@@ -7,6 +7,10 @@ import type {
 
 const fastFashionMarkers = ["shein", "temu", "fashion nova", "boohoo"];
 const secondhandMarkers = ["secondhand", "pre-owned", "thrift", "resale", "used"];
+const BASE_CLOTHING_CARBON_KG = 10.2;
+const FAST_FASHION_ADJUSTMENT_KG = 2.1;
+const SECONDHAND_ADJUSTMENT_KG = -4.8;
+const CARBON_PERCENT_REFERENCE_KG = 22;
 const clothingMarkers = [
   "shirt",
   "tee",
@@ -63,7 +67,7 @@ function inferDelivery(productData: ProductData): {
 
 function calculateClothingCarbonKg(productData: ProductData, marketSegment: MarketSegment, deliveryMultiplier: number): number {
   const text = `${productData.title} ${productData.description}`.toLowerCase();
-  let kg = 10.2;
+  let kg = BASE_CLOTHING_CARBON_KG;
 
   if (text.includes("polyester")) kg += 2.4;
   if (text.includes("denim")) kg += 1.7;
@@ -71,8 +75,8 @@ function calculateClothingCarbonKg(productData: ProductData, marketSegment: Mark
   if (text.includes("linen")) kg -= 1.2;
   if (text.includes("recycled")) kg -= 1.8;
 
-  if (marketSegment === "fast-fashion") kg += 2.1;
-  if (marketSegment === "secondhand") kg -= 4.8;
+  if (marketSegment === "fast-fashion") kg += FAST_FASHION_ADJUSTMENT_KG;
+  if (marketSegment === "secondhand") kg += SECONDHAND_ADJUSTMENT_KG;
 
   return Math.max(1.2, Number((kg * deliveryMultiplier).toFixed(1)));
 }
@@ -100,7 +104,10 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
     10,
     Math.min(98, ethicsBase - (delivery.speed === "Standard" ? 0 : 5))
   );
-  const carbonPercent = Math.max(15, Math.min(100, Math.round((carbonKgNumber / 22) * 100)));
+  const carbonPercent = Math.max(
+    15,
+    Math.min(100, Math.round((carbonKgNumber / CARBON_PERCENT_REFERENCE_KG) * 100))
+  );
   const alternativesCount = productType === "clothing" ? 3 : 2;
 
   return {
@@ -115,7 +122,7 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
     treeGrowthEquivalent: `${Math.max(1, Math.round(carbonKgNumber / 4.5))} months tree growth`,
     phoneChargeEquivalent: `${Math.max(1, Math.round(carbonKgNumber / 2))} phone charges`,
     source:
-      "Derived via clothing backend pipeline: catalog-classifier + lifecycle-emissions-api + shipping-emissions-api + supply-chain-risk-api",
+      "Estimated locally using scraped product text + backend-aligned heuristic stages (catalog, lifecycle, shipping, supply-chain signals).",
     ethicsScore,
     ethicsTags: buildEthicsTags(marketSegment, delivery.speed),
     deliverySpeed: delivery.speed,
