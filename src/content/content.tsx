@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { CarbonCartApp } from "./App";
 import { allowedSites, mountId } from "./config";
+import { PolarBearPet } from "./polarBearPet";
 import { getProductTitle } from "./scraper";
 import { contentState } from "./state";
 
@@ -9,8 +10,11 @@ const isAllowedSite = allowedSites.some((site) =>
   window.location.hostname.includes(site)
 );
 
+let polarBearPet: PolarBearPet | null = null;
+
 if (!isAllowedSite) {
   unmountCarbonCart();
+  destroyPolarBearPet();
 } else {
   initializeCarbonCart();
 }
@@ -43,6 +47,7 @@ function initializeCarbonCart(): void {
   };
 
   const start = () => {
+    ensurePolarBearPet();
     refresh();
 
     const observer = new MutationObserver(() => {
@@ -70,6 +75,26 @@ function initializeCarbonCart(): void {
   } else {
     start();
   }
+}
+
+function ensurePolarBearPet(): void {
+  if (polarBearPet) return;
+
+  polarBearPet = new PolarBearPet({
+    spritePath: "assets/sprites/polar-bear-sheet.png",
+    storageArea: "local",
+    percentKey: "emissionSavingsPercent",
+  });
+
+  polarBearPet.start().catch((err) => {
+    console.warn("[PolarBearPet] Start failed:", err);
+  });
+}
+
+function destroyPolarBearPet(): void {
+  if (!polarBearPet) return;
+  polarBearPet.destroy();
+  polarBearPet = null;
 }
 
 function mountCarbonCart(productTitle: string): void {

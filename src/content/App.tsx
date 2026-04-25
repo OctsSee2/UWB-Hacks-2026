@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { onboardingKey } from "./config";
+import { readTotalCO2Saved } from "./co2Storage";
 import { setupDraggableBubble } from "./drag";
 import { getDemoAnalysisData } from "./emissions";
 import { IconArrow, IconBolt, IconCheck, IconLeaf, IconLogo } from "./icons";
@@ -36,6 +37,13 @@ type DemoPanelProps = {
   analysis: DemoAnalysisData;
 };
 
+type ImpactPanelProps = {
+  active: boolean;
+  analysis: DemoAnalysisData;
+  totalCO2Saved: number;
+  onSetTotalCO2Saved: (value: number) => void;
+};
+
 type TabView = Exclude<ViewName, "onboarding">;
 
 export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
@@ -46,6 +54,15 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const [isOnboarded, setIsOnboarded] = useState(
     () => localStorage.getItem(onboardingKey) === "1"
   );
+  const [totalCO2Saved, setTotalCO2Saved] = useState(() => readTotalCO2Saved());
+
+  const handleSetCO2 = (value: number) => {
+    setTotalCO2Saved(value);
+    // Persist to storage
+    const CO2_KEY = "carboncart_co2saved_v1";
+    localStorage.setItem(CO2_KEY, String(value));
+    void chrome.storage.local.set({ emissionSavingsPercent: value });
+  };
 
   const productData = useMemo(() => scrapeProductData(), [productTitle]);
   const analysis = useMemo(() => getDemoAnalysisData(productData), [productData]);
@@ -132,7 +149,7 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
           <OnboardingPanel active={view === "onboarding"} onStart={completeOnboarding} />
           <AnalysisPanel active={view === "analysis"} analysis={analysis} productTitle={displayTitle} onSeeAlternatives={() => setPanelView("alternatives")} />
           <AlternativesPanel active={view === "alternatives"} analysis={analysis} />
-          <ImpactPanel active={view === "impact"} analysis={analysis} />
+          <ImpactPanel active={view === "impact"} analysis={analysis} totalCO2Saved={totalCO2Saved} onSetTotalCO2Saved={handleSetCO2} />
         </div>
       </section>
     </>
@@ -298,12 +315,33 @@ function AlternativesPanel({ active, analysis }: DemoPanelProps) {
   );
 }
 
-function ImpactPanel({ active, analysis }: DemoPanelProps) {
+function ImpactPanel({ active, analysis, totalCO2Saved, onSetTotalCO2Saved }: ImpactPanelProps) {
   const impact = analysis.impact;
 
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="impact">
       <div className="cc-body">
+        {/* DEV: Emissions savings percent slider */}
+        <div className="cc-dev-slider">
+          <div style={{ fontSize: "11px", color: "var(--cc-text-secondary)", marginBottom: "6px", fontWeight: 500 }}>
+            DEV: Emissions Savings (%)
+          </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={totalCO2Saved}
+              onChange={(e) => onSetTotalCO2Saved(parseFloat(e.target.value))}
+              style={{ flex: 1, cursor: "pointer" }}
+            />
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--cc-moss)", minWidth: "28px" }}>
+              {totalCO2Saved.toFixed(0)}
+            </div>
+          </div>
+        </div>
+
         <div className="cc-hero-saved">
           <div className="cc-label" style={{ marginBottom: "6px" }}>You've saved</div>
           <div className="cc-big">{impact.savedKg}<span className="cc-big-unit">kg CO2</span></div>

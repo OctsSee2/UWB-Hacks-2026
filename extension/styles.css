@@ -665,6 +665,181 @@
   display: none;
 }
 
+/* ── Smog Monster ─────────────────────────────────────────── */
+
+.cc-dev-slider {
+  background: rgba(56, 102, 65, 0.08);
+  border: 1px solid var(--cc-moss-border);
+  border-radius: var(--cc-r-card);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.cc-dev-slider input[type="range"] {
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(56, 102, 65, 0.2);
+  outline: none;
+}
+
+.cc-dev-slider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cc-sage);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(56, 102, 65, 0.4);
+}
+
+.cc-dev-slider input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cc-sage);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(56, 102, 65, 0.4);
+}
+
+/* ── Smog Monster ─────────────────────────────────────────── */
+
+.cc-smog-scene {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  overflow: hidden;
+  border-radius: var(--cc-r-card);
+  transition: background 1.2s ease;
+}
+
+.cc-trail-canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.cc-city-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  z-index: 1;
+}
+
+.cc-haze {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(160, 100, 30, 0.55) 0%,
+    rgba(160, 100, 30, 0.15) 100%
+  );
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+  z-index: 1;
+}
+
+.cc-smog-s5 .cc-haze {
+  background: linear-gradient(
+    180deg,
+    rgba(80, 160, 200, 0.2) 0%,
+    rgba(80, 160, 200, 0.05) 100%
+  );
+}
+
+.cc-monster-wrap {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  transition: opacity 1.5s ease;
+  animation: cc-bounce 8s ease-in-out infinite;
+  z-index: 2;
+}
+
+.cc-smog-s2 .cc-monster-wrap {
+  animation: cc-bounce 9s ease-in-out infinite;
+}
+
+.cc-smog-s3 .cc-monster-wrap {
+  animation: cc-bounce 10s ease-in-out infinite;
+}
+
+.cc-smog-s4 .cc-monster-wrap {
+  animation: cc-bounce 11s ease-in-out infinite;
+}
+
+.cc-smog-s5 .cc-monster-wrap {
+  animation: none;
+  left: 50%;
+}
+
+@keyframes cc-bounce {
+  0%   {
+    left: 5%;
+    top: 20px;
+  }
+  25%  {
+    left: 35%;
+    top: 12px;
+  }
+  50%  {
+    left: 90%;
+    top: 18px;
+  }
+  75%  {
+    left: 45%;
+    top: 16px;
+  }
+  100% {
+    left: 5%;
+    top: 20px;
+  }
+}
+
+.cc-monster-svg {
+  display: block;
+  overflow: visible;
+}
+
+.cc-dissolve-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.cc-monster-toast {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(56, 102, 65, 0.92);
+  color: var(--cc-linen);
+  padding: 5px 14px;
+  border-radius: var(--cc-r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 10;
+  animation: cc-toast-in 0.3s ease-out;
+}
+
+@keyframes cc-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── End Smog Monster ─────────────────────────────────────── */
+
 @media (max-width: 520px) {
   .cc-root.cc-fixed {
     right: 8px;

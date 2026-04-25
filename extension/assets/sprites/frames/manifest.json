@@ -1,0 +1,78 @@
+{
+  "source": "extension/assets/sprites/polar-bear-sheet.png",
+  "frameCount": 10,
+  "states": 5,
+  "framesPerState": 2,
+  "frames": [
+    {
+      "state": 0,
+      "frame": 0,
+      "file": "assets/sprites/frames/walk-s0-f0.png",
+      "width": 152,
+      "height": 112
+    },
+    {
+      "state": 0,
+      "frame": 1,
+      "file": "assets/sprites/frames/walk-s0-f1.png",
+      "width": 152,
+      "height": 112
+    },
+    {
+      "state": 1,
+      "frame": 0,
+      "file": "assets/sprites/frames/walk-s1-f0.png",
+      "width": 155,
+      "height": 111
+    },
+    {
+      "state": 1,
+      "frame": 1,
+      "file": "assets/sprites/frames/walk-s1-f1.png",
+      "width": 153,
+      "height": 112
+    },
+    {
+      "state": 2,
+      "frame": 0,
+      "file": "assets/sprites/frames/walk-s2-f0.png",
+      "width": 147,
+      "height": 111
+    },
+    {
+      "state": 2,
+      "frame": 1,
+      "file": "assets/sprites/frames/walk-s2-f1.png",
+      "width": 146,
+      "height": 112
+    },
+    {
+      "state": 3,
+      "frame": 0,
+      "file": "assets/sprites/frames/walk-s3-f0.png",
+      "width": 148,
+      "height": 115
+    },
+    {
+      "state": 3,
+      "frame": 1,
+      "file": "assets/sprites/frames/walk-s3-f1.png",
+      "width": 149,
+      "height": 116
+    },
+    {
+      "state": 4,
+      "frame": 0,
+      "file": "assets/sprites/frames/walk-s4-f0.png",
+      "width": 149,
+      "height": 121
+    },
+    {
+      "state": 4,
+      "frame": 1,
+      "file": "assets/sprites/frames/walk-s4-f1.png",
+      "width": 148,
+      "height": 127
+    }
+  ]
+}

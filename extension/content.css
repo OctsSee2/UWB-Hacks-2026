@@ -1,0 +1,35 @@
+.polar-bear-pet {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  height: 64px;
+  z-index: 2147483647;
+  pointer-events: none;
+
+  background-repeat: no-repeat;
+  background-position: 0 0;
+
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  will-change: transform, background-position;
+
+  transform-origin: center center;
+}
+
+.polar-bear-pet--fallback {
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.85) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.85) 75%, rgba(255, 255, 255, 0.85)),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.85) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.85) 75%, rgba(255, 255, 255, 0.85)),
+    linear-gradient(180deg, #7ecbff 0%, #4aa2de 100%) !important;
+  background-size: 12px 12px, 12px 12px, 64px 64px !important;
+  background-position: 0 0, 6px 6px, 0 0 !important;
+  border: 2px solid #0f3550;
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .polar-bear-pet {
+    transition: transform 250ms linear;
+  }
+}
