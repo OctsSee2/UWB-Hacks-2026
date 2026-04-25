@@ -1,0 +1,41 @@
+Definitions:
+ - Broad product categories can be Tables, Bananas, Gaming PCs, Lip Gloss, Blenders, Shelves, TVs
+ - *Inferences* is an object that contains insights about a product, which can contain varying components depending on the product
+    - Company reputation
+    - Country of origin
+    - Functionality
+    - Price
+    - Ingredients
+    - User reviews sentiment
+       - Individual user reviews
+    - Alternative products on other platforms
+       - *Inferences* on those alternative products
+    - Healthiness
+    - FDA information
+    - Product recalls
+    - Shipping information
+       - Shipping environment impact
+       - Shipping fuel usage
+    - Carbon footprint
+    - Overall ethicalness rating for labor conditions, environment, animal cruelty, etc...
+
+Primary control flow:
+ - Product is detected from frontend
+ - Scrape webpage for any product information
+ - Query using Barcode IDs Anchor Table to get closest matching product details
+    - Only use details that are missing from webpage's product information
+ - Query any other DB APIs using DB Anchor Table for additional relevant product information
+ - Use all information about product to create *Inferences*
+ - Push *Inferences* to frontend
+
+DB Anchor Table:
+ - Match *Broad product categories* to barcode IDs
+ - Whenever a product needs to be looked up:
+    - Check which product in the Anchor Table is closest in concept
+    - Use that closest product's corresponding DB domain to query for more detailed product information
+
+Barcode IDs Anchor Table:
+ - Match *Broad product categories* to barcode IDs
+ - Whenever a product needs to be looked up:
+    - Check which product in the Anchor Table is closest in concept
+    - Use that closest product's corresponding barcode ID for more detail product information that is not available from original product source
