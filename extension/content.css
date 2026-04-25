@@ -2,10 +2,11 @@
   position: fixed;
   left: 0;
   bottom: 0;
-  width: 64px;
-  height: 64px;
+  width: 76.8px;
+  height: 76.8px;
   z-index: 2147483647;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 
   background-repeat: no-repeat;
   background-position: 0 0;
@@ -22,7 +23,7 @@
     linear-gradient(45deg, rgba(255, 255, 255, 0.85) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.85) 75%, rgba(255, 255, 255, 0.85)),
     linear-gradient(45deg, rgba(255, 255, 255, 0.85) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.85) 75%, rgba(255, 255, 255, 0.85)),
     linear-gradient(180deg, #7ecbff 0%, #4aa2de 100%) !important;
-  background-size: 12px 12px, 12px 12px, 64px 64px !important;
+  background-size: 12px 12px, 12px 12px, 76.8px 76.8px !important;
   background-position: 0 0, 6px 6px, 0 0 !important;
   border: 2px solid #0f3550;
   box-sizing: border-box;

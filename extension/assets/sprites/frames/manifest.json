@@ -1,9 +1,8 @@
 {
   "source": "extension/assets/sprites/polar-bear-sheet.png",
-  "frameCount": 10,
   "states": 5,
-  "framesPerState": 2,
-  "frames": [
+  "walkFramesPerState": 2,
+  "walk": [
     {
       "state": 0,
       "frame": 0,
@@ -73,6 +72,70 @@
       "file": "assets/sprites/frames/walk-s4-f1.png",
       "width": 148,
       "height": 127
+    }
+  ],
+  "sit": [
+    {
+      "state": 0,
+      "file": "assets/sprites/frames/sit-s0.png",
+      "width": 140,
+      "height": 98
+    },
+    {
+      "state": 1,
+      "file": "assets/sprites/frames/sit-s1.png",
+      "width": 134,
+      "height": 108
+    },
+    {
+      "state": 2,
+      "file": "assets/sprites/frames/sit-s2.png",
+      "width": 132,
+      "height": 110
+    },
+    {
+      "state": 3,
+      "file": "assets/sprites/frames/sit-s3.png",
+      "width": 136,
+      "height": 113
+    },
+    {
+      "state": 4,
+      "file": "assets/sprites/frames/sit-s4.png",
+      "width": 140,
+      "height": 116
+    }
+  ],
+  "stand": [
+    {
+      "state": 0,
+      "file": "assets/sprites/frames/stand-s0.png",
+      "width": 148,
+      "height": 119
+    },
+    {
+      "state": 1,
+      "file": "assets/sprites/frames/stand-s1.png",
+      "width": 122,
+      "height": 175
+    },
+    {
+      "state": 2,
+      "file": "assets/sprites/frames/stand-s2.png",
+      "width": 119,
+      "height": 184
+    },
+    {
+      "state": 3,
+      "file": "assets/sprites/frames/stand-s3.png",
+      "width": 120,
+      "height": 190
+    },
+    {
+      "state": 4,
+      "file": "assets/sprites/frames/stand-s4.png",
+      "width": 123,
+      "height": 190
     }
   ]
 }

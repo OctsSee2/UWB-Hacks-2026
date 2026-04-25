@@ -3,6 +3,7 @@ type Direction = 1 | -1;
 type HealthState = 0 | 1 | 2 | 3 | 4;
 
 type RenderMode = "extracted" | "sheet";
+type BehaviorState = "walking" | "sitting" | "standing";
 
 interface PolarBearPetConfig {
   spritePath: string;
@@ -12,12 +13,20 @@ interface PolarBearPetConfig {
   useChromaKeyForSheetFallback: boolean;
 }
 
+interface ExtractedFrames {
+  walk: string[][];
+  sit: string[];
+  stand: string[];
+}
+
 interface SheetAtlas {
   frameWidth: number;
   frameHeight: number;
   framesPerState: number;
-  firstFrameY: number;
   frameXs: number[];
+  rowYWalk: number;
+  rowYSit: number;
+  rowYStand: number;
 }
 
 /**
@@ -25,16 +34,16 @@ interface SheetAtlas {
  * the bottom edge of the viewport using DOM/CSS sprites (no canvas).
  */
 export class PolarBearPet {
-  private readonly DISPLAY_SIZE = 64;
+  private readonly DISPLAY_SIZE = 76.8;
   private readonly HEALTH_STATE_COUNT = 5;
   private readonly EXTRACTED_FRAMES_PER_STATE = 2;
+  private readonly STAND_DURATION_MS = 1200;
 
-  // Keep healthier states faster, but less extreme than before.
   private readonly speedByState: Record<HealthState, number> = {
     0: 18,
     1: 24,
     2: 30,
-    3: 34,
+    3: 27.2,
     4: 30.4,
   };
 
@@ -54,13 +63,16 @@ export class PolarBearPet {
   private healthState: HealthState = 2;
   private frameIndex = 0;
 
+  private behaviorState: BehaviorState = "walking";
+  private standingUntilMs = 0;
+
   private rafId: number | null = null;
   private lastTick = 0;
   private frameElapsedMs = 0;
   private running = false;
 
   private renderMode: RenderMode = "sheet";
-  private extractedFrameUrls: string[][] = [];
+  private extractedFrames: ExtractedFrames | null = null;
 
   private sheetImageWidth = 0;
   private sheetImageHeight = 0;
@@ -68,6 +80,7 @@ export class PolarBearPet {
 
   private readonly resizeHandler = () => this.onResize();
   private readonly visibilityHandler = () => this.onVisibilityChange();
+  private readonly clickHandler = () => this.onPetClick();
   private readonly storageHandler: (
     changes: Record<string, chrome.storage.StorageChange>,
     areaName: chrome.storage.AreaName
@@ -120,7 +133,10 @@ export class PolarBearPet {
     document.removeEventListener("visibilitychange", this.visibilityHandler);
     chrome.storage.onChanged.removeListener(this.storageHandler);
 
-    this.petEl?.remove();
+    if (this.petEl) {
+      this.petEl.removeEventListener("click", this.clickHandler);
+      this.petEl.remove();
+    }
     this.petEl = null;
   }
 
@@ -131,8 +147,15 @@ export class PolarBearPet {
     const deltaSec = deltaMs / 1000;
     this.lastTick = now;
 
-    this.updatePosition(deltaSec);
-    this.updateAnimation(deltaMs);
+    this.advanceBehavior(now);
+
+    if (this.behaviorState === "walking") {
+      this.updatePosition(deltaSec);
+      this.updateAnimation(deltaMs);
+    } else {
+      this.frameIndex = 0;
+    }
+
     this.render();
 
     this.rafId = window.requestAnimationFrame(this.tick);
@@ -142,16 +165,36 @@ export class PolarBearPet {
     const existing = document.getElementById("polar-bear-pet");
     if (existing instanceof HTMLDivElement) {
       this.petEl = existing;
+      this.petEl.addEventListener("click", this.clickHandler);
       return;
     }
 
     const el = document.createElement("div");
     el.id = "polar-bear-pet";
     el.className = "polar-bear-pet";
+    el.addEventListener("click", this.clickHandler);
     document.body.appendChild(el);
     this.petEl = el;
 
     this.x = Math.max(0, Math.min(this.x, this.getMaxX()));
+  }
+
+  private onPetClick(): void {
+    if (this.behaviorState === "walking") {
+      this.behaviorState = "sitting";
+      return;
+    }
+
+    if (this.behaviorState === "sitting") {
+      this.behaviorState = "standing";
+      this.standingUntilMs = performance.now() + this.STAND_DURATION_MS;
+    }
+  }
+
+  private advanceBehavior(now: number): void {
+    if (this.behaviorState === "standing" && now >= this.standingUntilMs) {
+      this.behaviorState = "walking";
+    }
   }
 
   private async initializeRenderSource(): Promise<void> {
@@ -172,22 +215,26 @@ export class PolarBearPet {
   }
 
   private async tryInitializeExtractedFrames(): Promise<boolean> {
-    const matrix: string[][] = [];
+    const walk: string[][] = [];
+    const sit: string[] = [];
+    const stand: string[] = [];
+
     for (let state = 0; state < this.HEALTH_STATE_COUNT; state += 1) {
-      const row: string[] = [];
-      for (let frame = 0; frame < this.EXTRACTED_FRAMES_PER_STATE; frame += 1) {
-        row.push(
-          chrome.runtime.getURL(
-            `${this.config.extractedFramesDir}/walk-s${state}-f${frame}.png`
-          )
-        );
-      }
-      matrix.push(row);
+      walk.push([
+        chrome.runtime.getURL(`${this.config.extractedFramesDir}/walk-s${state}-f0.png`),
+        chrome.runtime.getURL(`${this.config.extractedFramesDir}/walk-s${state}-f1.png`),
+      ]);
+      sit.push(chrome.runtime.getURL(`${this.config.extractedFramesDir}/sit-s${state}.png`));
+      stand.push(chrome.runtime.getURL(`${this.config.extractedFramesDir}/stand-s${state}.png`));
     }
 
     try {
-      await this.loadImage(matrix[0][0]);
-      this.extractedFrameUrls = matrix;
+      await Promise.all([
+        this.loadImage(walk[0][0]),
+        this.loadImage(sit[0]),
+        this.loadImage(stand[0]),
+      ]);
+      this.extractedFrames = { walk, sit, stand };
       return true;
     } catch {
       return false;
@@ -224,7 +271,6 @@ export class PolarBearPet {
   private configureSheetAtlasFromImage(): void {
     if (!this.petEl || this.sheetImageWidth <= 0 || this.sheetImageHeight <= 0) return;
 
-    // Fallback only. This preserves the top-row walking coordinates for the current sheet.
     const step = this.sheetImageWidth * 0.098;
     const firstX = this.sheetImageWidth * 0.011;
     const frameXs = Array.from({ length: 10 }, (_, i) => firstX + i * step);
@@ -233,8 +279,10 @@ export class PolarBearPet {
       frameWidth: this.sheetImageWidth * 0.089,
       frameHeight: this.sheetImageHeight * 0.165,
       framesPerState: 2,
-      firstFrameY: this.sheetImageHeight * 0.043,
       frameXs,
+      rowYWalk: this.sheetImageHeight * 0.043,
+      rowYSit: this.sheetImageHeight * 0.244,
+      rowYStand: this.sheetImageHeight * 0.448,
     };
 
     const sx = this.DISPLAY_SIZE / this.sheetAtlas.frameWidth;
@@ -252,10 +300,6 @@ export class PolarBearPet {
     });
   }
 
-  /**
-   * Adds an SVG filter to the page that suppresses green-screen pixels.
-   * Used only when falling back to sheet-mode.
-   */
   private ensureChromaKeyFilter(): void {
     if (document.getElementById("polar-bear-chroma-key-defs")) return;
 
@@ -333,36 +377,42 @@ export class PolarBearPet {
     if (this.frameElapsedMs < frameDuration) return;
 
     this.frameElapsedMs = 0;
-    const frameCount =
-      this.renderMode === "extracted"
-        ? this.EXTRACTED_FRAMES_PER_STATE
-        : this.sheetAtlas?.framesPerState ?? 2;
-    this.frameIndex = (this.frameIndex + 1) % frameCount;
+    this.frameIndex = (this.frameIndex + 1) % this.EXTRACTED_FRAMES_PER_STATE;
   }
 
   private render(): void {
     if (!this.petEl) return;
 
-    if (this.renderMode === "extracted" && this.extractedFrameUrls.length > 0) {
-      const url = this.extractedFrameUrls[this.healthState][this.frameIndex];
-      this.petEl.style.backgroundImage = `url("${url}")`;
+    if (this.renderMode === "extracted" && this.extractedFrames) {
+      if (this.behaviorState === "walking") {
+        this.petEl.style.backgroundImage = `url("${this.extractedFrames.walk[this.healthState][this.frameIndex]}")`;
+      } else if (this.behaviorState === "sitting") {
+        this.petEl.style.backgroundImage = `url("${this.extractedFrames.sit[this.healthState]}")`;
+      } else {
+        this.petEl.style.backgroundImage = `url("${this.extractedFrames.stand[this.healthState]}")`;
+      }
       this.petEl.style.backgroundPosition = "center bottom";
     } else if (this.renderMode === "sheet" && this.sheetAtlas) {
-      const atlasFrameIndex = this.healthState * this.sheetAtlas.framesPerState + this.frameIndex;
+      const stateFrameOdd = this.healthState * this.sheetAtlas.framesPerState + 1;
+      const stateFrameAnim = this.healthState * this.sheetAtlas.framesPerState + this.frameIndex;
+      const atlasFrameIndex = this.behaviorState === "walking" ? stateFrameAnim : stateFrameOdd;
       const sourceX = this.sheetAtlas.frameXs[atlasFrameIndex] ?? this.sheetAtlas.frameXs[0];
-      const sourceY = this.sheetAtlas.firstFrameY;
+      const sourceY =
+        this.behaviorState === "walking"
+          ? this.sheetAtlas.rowYWalk
+          : this.behaviorState === "sitting"
+            ? this.sheetAtlas.rowYSit
+            : this.sheetAtlas.rowYStand;
 
       const sx = this.DISPLAY_SIZE / this.sheetAtlas.frameWidth;
       const sy = this.DISPLAY_SIZE / this.sheetAtlas.frameHeight;
-      const bgX = -(sourceX * sx);
-      const bgY = -(sourceY * sy);
-
-      this.petEl.style.backgroundPosition = `${bgX}px ${bgY}px`;
+      this.petEl.style.backgroundPosition = `${-(sourceX * sx)}px ${-(sourceY * sy)}px`;
     }
 
     const facing = this.direction === 1 ? 1 : -1;
     this.petEl.style.transform = `translate3d(${this.x}px, 0, 0) scaleX(${facing})`;
     this.petEl.setAttribute("data-health-state", String(this.healthState));
+    this.petEl.setAttribute("data-behavior", this.behaviorState);
   }
 
   private onResize(): void {
