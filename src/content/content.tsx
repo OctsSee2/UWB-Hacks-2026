@@ -15,7 +15,7 @@ if (!isAllowedSite) {
   initializeCarbonCart();
 }
 
-function initializeCarbonCart() {
+function initializeCarbonCart(): void {
   if (contentState.initialized) return;
   contentState.initialized = true;
 
@@ -36,7 +36,9 @@ function initializeCarbonCart() {
   };
 
   const scheduleRefresh = () => {
-    clearTimeout(contentState.refreshTimer);
+    if (contentState.refreshTimer !== null) {
+      clearTimeout(contentState.refreshTimer);
+    }
     contentState.refreshTimer = setTimeout(refresh, 160);
   };
 
@@ -70,7 +72,7 @@ function initializeCarbonCart() {
   }
 }
 
-function mountCarbonCart(productTitle) {
+function mountCarbonCart(productTitle: string): void {
   unmountCarbonCart();
 
   const rootElement = document.createElement("div");
@@ -82,7 +84,7 @@ function mountCarbonCart(productTitle) {
   contentState.reactRoot.render(<CarbonCartApp productTitle={productTitle} />);
 }
 
-function unmountCarbonCart() {
+function unmountCarbonCart(): void {
   const rootElement = document.getElementById(mountId);
   if (contentState.reactRoot) {
     contentState.reactRoot.unmount();
@@ -92,7 +94,7 @@ function unmountCarbonCart() {
   rootElement?.remove();
 }
 
-function isLikelyProductPage() {
+function isLikelyProductPage(): boolean {
   const host = window.location.hostname;
   const path = window.location.pathname.toLowerCase();
 

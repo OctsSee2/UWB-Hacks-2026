@@ -7,7 +7,7 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: "extension/dist",
     rollupOptions: {
-      input: "src/content/content.jsx",
+      input: "src/content/content.tsx",
       output: {
         entryFileNames: "content.js",
         chunkFileNames: "content-[hash].js",

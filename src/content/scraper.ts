@@ -6,12 +6,13 @@ import {
   shippingSelectors,
 } from "./config";
 import { getImage, getText } from "./utils";
+import type { ProductData } from "./types";
 
-export function getPrice() {
+export function getPrice(): string {
   return getText(priceSelectors);
 }
 
-export function getProductTitle() {
+export function getProductTitle(): string {
   return (
     document.querySelector("#productTitle")?.textContent?.trim() ||
     document.querySelector("h1")?.textContent?.trim() ||
@@ -19,7 +20,7 @@ export function getProductTitle() {
   );
 }
 
-export function scrapeProductData() {
+export function scrapeProductData(): ProductData {
   // Real scraped data from the visible product page.
   const title = getProductTitle();
   const brand = getText(brandSelectors);

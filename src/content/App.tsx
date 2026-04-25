@@ -4,11 +4,44 @@ import { setupDraggableBubble } from "./drag";
 import { getDemoAnalysisData } from "./emissions";
 import { IconArrow, IconBolt, IconCheck, IconLeaf, IconLogo } from "./icons";
 import { scrapeProductData } from "./scraper";
+import type { DemoAnalysisData, ViewName } from "./types";
 
-export function CarbonCartApp({ productTitle }) {
-  const badgeRef = useRef(null);
+type CarbonCartAppProps = {
+  productTitle: string;
+};
+
+type HeaderProps = {
+  onClose: () => void;
+};
+
+type TabsProps = {
+  view: ViewName;
+  onChange: (view: ViewName) => void;
+};
+
+type OnboardingPanelProps = {
+  active: boolean;
+  onStart: () => void;
+};
+
+type AnalysisPanelProps = {
+  active: boolean;
+  analysis: DemoAnalysisData;
+  productTitle: string;
+  onSeeAlternatives: () => void;
+};
+
+type DemoPanelProps = {
+  active: boolean;
+  analysis: DemoAnalysisData;
+};
+
+type TabView = Exclude<ViewName, "onboarding">;
+
+export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
+  const badgeRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState("analysis");
+  const [view, setView] = useState<ViewName>("analysis");
   const [suppressToggleUntil, setSuppressToggleUntil] = useState(0);
   const [isOnboarded, setIsOnboarded] = useState(
     () => localStorage.getItem(onboardingKey) === "1"
@@ -37,7 +70,7 @@ export function CarbonCartApp({ productTitle }) {
   useEffect(() => {
     const root = badgeRef.current?.closest(".cc-root");
     const badge = badgeRef.current;
-    if (!root || !badge) return undefined;
+    if (!(root instanceof HTMLElement) || !badge) return undefined;
 
     return setupDraggableBubble(root, badge, () => {
       setSuppressToggleUntil(Date.now() + 250);
@@ -45,7 +78,7 @@ export function CarbonCartApp({ productTitle }) {
   }, []);
 
   useEffect(() => {
-    const closeOnEscape = (event) => {
+    const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
 
@@ -53,7 +86,7 @@ export function CarbonCartApp({ productTitle }) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, []);
 
-  const setPanelView = (nextView) => {
+  const setPanelView = (nextView: ViewName) => {
     setView(nextView);
   };
 
@@ -106,7 +139,7 @@ export function CarbonCartApp({ productTitle }) {
   );
 }
 
-function Header({ onClose }) {
+function Header({ onClose }: HeaderProps) {
   return (
     <div className="cc-header">
       <div className="cc-logo">
@@ -124,8 +157,8 @@ function Header({ onClose }) {
   );
 }
 
-function Tabs({ view, onChange }) {
-  const tabs = [
+function Tabs({ view, onChange }: TabsProps) {
+  const tabs: { id: TabView; label: string }[] = [
     { id: "analysis", label: "Analysis" },
     { id: "alternatives", label: "Alternatives" },
     { id: "impact", label: "My Impact" },
@@ -148,7 +181,7 @@ function Tabs({ view, onChange }) {
   );
 }
 
-function OnboardingPanel({ active, onStart }) {
+function OnboardingPanel({ active, onStart }: OnboardingPanelProps) {
   return (
     <div className={`cc-panel cc-panel-onboarding ${active ? "" : "cc-hidden"}`} data-view="onboarding">
       <div className="cc-onb-hero">
@@ -171,7 +204,12 @@ function OnboardingPanel({ active, onStart }) {
   );
 }
 
-function AnalysisPanel({ active, analysis, productTitle, onSeeAlternatives }) {
+function AnalysisPanel({
+  active,
+  analysis,
+  productTitle,
+  onSeeAlternatives,
+}: AnalysisPanelProps) {
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="analysis">
       <div className="cc-product-strip">
@@ -227,7 +265,7 @@ function AnalysisPanel({ active, analysis, productTitle, onSeeAlternatives }) {
   );
 }
 
-function AlternativesPanel({ active, analysis }) {
+function AlternativesPanel({ active, analysis }: DemoPanelProps) {
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="alternatives">
       <div className="cc-body">
@@ -260,7 +298,7 @@ function AlternativesPanel({ active, analysis }) {
   );
 }
 
-function ImpactPanel({ active, analysis }) {
+function ImpactPanel({ active, analysis }: DemoPanelProps) {
   const impact = analysis.impact;
 
   return (

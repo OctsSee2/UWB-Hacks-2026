@@ -6,7 +6,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "test": "npm run build"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && npm run build"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,11 @@
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@types/chrome": "^0.1.40",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
     "vite": "^8.0.10"
   }
 }

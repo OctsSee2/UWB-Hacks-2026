@@ -1,7 +1,20 @@
 import { bubblePositionKey } from "./config";
 import { clamp } from "./utils";
 
-function readBubblePosition() {
+type BubblePosition = {
+  left: number;
+  top: number;
+};
+
+type DragState = {
+  startX: number;
+  startY: number;
+  startLeft: number;
+  startTop: number;
+  moved: boolean;
+};
+
+function readBubblePosition(): BubblePosition | null {
   try {
     const raw = localStorage.getItem(bubblePositionKey);
     if (!raw) return null;
@@ -16,11 +29,15 @@ function readBubblePosition() {
   return null;
 }
 
-function writeBubblePosition(left, top) {
+function writeBubblePosition(left: number, top: number): void {
   localStorage.setItem(bubblePositionKey, JSON.stringify({ left, top }));
 }
 
-function getClampedPosition(left, top, badge) {
+function getClampedPosition(
+  left: number,
+  top: number,
+  badge: HTMLElement
+): BubblePosition {
   const margin = 8;
   const maxLeft = Math.max(margin, window.innerWidth - badge.offsetWidth - margin);
   const maxTop = Math.max(margin, window.innerHeight - badge.offsetHeight - margin);
@@ -31,23 +48,27 @@ function getClampedPosition(left, top, badge) {
   };
 }
 
-function applyBubblePosition(root, left, top) {
+function applyBubblePosition(root: HTMLElement, left: number, top: number): void {
   root.style.left = `${left}px`;
   root.style.top = `${top}px`;
   root.style.right = "auto";
   root.style.bottom = "auto";
 }
 
-export function setupDraggableBubble(root, badge, onDragEnd) {
+export function setupDraggableBubble(
+  root: HTMLElement,
+  badge: HTMLElement,
+  onDragEnd: () => void
+): () => void {
   const saved = readBubblePosition();
   if (saved) {
     const clamped = getClampedPosition(saved.left, saved.top, badge);
     applyBubblePosition(root, clamped.left, clamped.top);
   }
 
-  let drag = null;
+  let drag: DragState | null = null;
 
-  const onPointerDown = (event) => {
+  const onPointerDown = (event: PointerEvent) => {
     if (event.button !== 0) return;
 
     const rect = root.getBoundingClientRect();
@@ -63,7 +84,7 @@ export function setupDraggableBubble(root, badge, onDragEnd) {
     badge.setPointerCapture?.(event.pointerId);
   };
 
-  const onPointerMove = (event) => {
+  const onPointerMove = (event: PointerEvent) => {
     if (!drag) return;
 
     const deltaX = event.clientX - drag.startX;
@@ -83,7 +104,7 @@ export function setupDraggableBubble(root, badge, onDragEnd) {
     applyBubblePosition(root, next.left, next.top);
   };
 
-  const onPointerUp = (event) => {
+  const onPointerUp = (event: PointerEvent) => {
     if (!drag) return;
 
     badge.releasePointerCapture?.(event.pointerId);

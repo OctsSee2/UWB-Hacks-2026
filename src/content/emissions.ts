@@ -1,10 +1,12 @@
-export function getDemoAnalysisData(productData) {
+import type { DemoAnalysisData, ProductData } from "./types";
+
+export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData {
   return {
     // Real scraped product data.
     productTitle: productData.title,
 
     // Fake demo analysis data for the hackathon prototype.
-    carbonKg: "14.2",
+    carbonKg: "15.5",
     carbonPercent: 78,
     emissionsLevel: "High emissions",
     alternativesCount: 3,
