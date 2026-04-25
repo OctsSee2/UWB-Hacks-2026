@@ -18,7 +18,7 @@ The project vision is a shopping assistant that:
 
 - Detects products from frontend pages
 - Enriches product data using barcode/category anchors and external APIs
-- Produces product **inferences** (reputation, origin, functionality, pricing, reviews, ethics, carbon/shipping factors, recalls, etc.)
+- Produces product **inferences** (reputation, origin, functionality, pricing, reviews, ethics, environmental impact, recalls, etc.)
 - Returns those inferences to frontend UX
 
 ## Agent priorities
