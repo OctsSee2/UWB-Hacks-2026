@@ -55,7 +55,8 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
     savingsAmount: "14.8 kg CO2",
     savingsComparison: " - like not driving 33 miles",
     agentProfile: {
-      productTypes: ["clothing", "apparel", "fast-fashion"],
+      productTypes: ["clothing"],
+      marketSegments: ["fast-fashion"],
       purpose:
         "Help shoppers move away from fast-fashion purchases (for example Shein and Amazon listings) toward lower-emission, higher-ethics clothing alternatives.",
       deepResearchEnabled: true,

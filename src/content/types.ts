@@ -19,13 +19,16 @@ export type Alternative = {
   tags: string;
 };
 
-export type ProductType = "clothing" | "apparel" | "fast-fashion";
+export type ProductType = "clothing";
+export type MarketSegment = "fast-fashion" | "mainstream" | "secondhand";
+export type BackendMode = "api-aggregator" | "mock-local";
 
 export type DemoAgentProfile = {
   productTypes: ProductType[];
+  marketSegments: MarketSegment[];
   purpose: string;
   deepResearchEnabled: boolean;
-  backendMode: "api-aggregator";
+  backendMode: BackendMode;
   apiPipeline: string[];
 };
 
