@@ -19,7 +19,7 @@ export type Alternative = {
   tags: string;
 };
 
-export type ProductType = "clothing";
+export type ProductType = "clothing" | "other";
 export type MarketSegment = "fast-fashion" | "mainstream" | "secondhand";
 export type BackendMode = "api-aggregator" | "mock-local";
 
