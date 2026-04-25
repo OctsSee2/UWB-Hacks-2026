@@ -29,8 +29,7 @@ function initializeCarbonCart(): void {
 
     const title = getProductTitle();
     const existing = document.getElementById(mountId);
-    if (!existing || title !== contentState.lastMountedTitle) {
-      mountCarbonCart(title);
+    if (!existing || title !== contentState.lastMountedTitle) {      console.log("Mounting CarbonCart for:", title);      mountCarbonCart(title);
       contentState.lastMountedTitle = title;
     }
   };
@@ -97,6 +96,8 @@ function unmountCarbonCart(): void {
 function isLikelyProductPage(): boolean {
   const host = window.location.hostname;
   const path = window.location.pathname.toLowerCase();
+
+  console.log("Checking product page:", host, path);
 
   if (host.includes("amazon.com")) {
     if (path.includes("/dp/") || path.includes("/gp/product/")) return true;
