@@ -4,7 +4,7 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
   return {
     // Real scraped product data.
     productTitle: productData.title,
-    productType: "Clothing",
+    productType: "clothing",
 
     // Fake demo analysis data for the hackathon prototype.
     carbonKg: "18.2",
@@ -58,6 +58,14 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
       productTypes: ["clothing", "apparel", "fast-fashion"],
       purpose:
         "Help shoppers move away from fast-fashion purchases (for example Shein and Amazon listings) toward lower-emission, higher-ethics clothing alternatives.",
+      deepResearchEnabled: true,
+      backendMode: "api-aggregator",
+      apiPipeline: [
+        "catalog-classifier",
+        "lifecycle-emissions-api",
+        "shipping-emissions-api",
+        "supply-chain-risk-api",
+      ],
     },
     impact: {
       savedKg: "56",

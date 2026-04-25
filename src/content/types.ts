@@ -19,9 +19,14 @@ export type Alternative = {
   tags: string;
 };
 
+export type ProductType = "clothing" | "apparel" | "fast-fashion";
+
 export type DemoAgentProfile = {
-  productTypes: string[];
+  productTypes: ProductType[];
   purpose: string;
+  deepResearchEnabled: boolean;
+  backendMode: "api-aggregator";
+  apiPipeline: string[];
 };
 
 export type ImpactStats = {
@@ -38,7 +43,7 @@ export type ImpactStats = {
 
 export type DemoAnalysisData = {
   productTitle: string;
-  productType: string;
+  productType: ProductType;
   carbonKg: string;
   carbonPercent: number;
   emissionsLevel: string;
