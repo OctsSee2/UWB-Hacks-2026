@@ -31,7 +31,7 @@ The project vision is a shopping assistant that:
 ## Editing rules for this branch
 
 - Maintain the existing plain-text, outline-style format.
-- Keep category groupings stable (`Food`, `Electronics`, `Generic`, `Environmental`, `Other`) unless explicitly asked to restructure.
+- Keep category groupings in `data_sources.txt` stable (`Food`, `Electronics`, `Generic`, `Environmental`, `Other`) unless explicitly asked to restructure.
 - When adding data sources, include both:
   - purpose/domain
   - URL (and whether account/auth is required when known)
