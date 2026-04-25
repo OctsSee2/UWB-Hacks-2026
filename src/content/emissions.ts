@@ -12,8 +12,8 @@ const FAST_FASHION_ADJUSTMENT_KG = 2.1;
 const SECONDHAND_ADJUSTMENT_KG = -4.8;
 const CARBON_PERCENT_REFERENCE_KG = 22;
 const DRIVING_EQ_MILES_PER_KG = 2.3;
-const TREE_GROWTH_MONTHS_PER_KG = 1 / 4.5;
-const PHONE_CHARGES_PER_KG = 1 / 2;
+const KG_PER_TREE_GROWTH_MONTH = 4.5;
+const KG_PER_PHONE_CHARGE = 2;
 const MIN_TREE_GROWTH_MONTHS = 1;
 const MIN_PHONE_CHARGES = 1;
 const SAVINGS_MULTIPLIER = 0.62;
@@ -38,9 +38,21 @@ const clothingMarkers = [
   "clothing",
 ];
 
+function roundTo1Decimal(value: number): number {
+  return Number(value.toFixed(1));
+}
+
+function containsWord(text: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`\\b${escaped}\\b`, "i");
+  return pattern.test(text);
+}
+
 function inferProductType(productData: ProductData): ProductType {
   const text = `${productData.title} ${productData.description} ${productData.category}`.toLowerCase();
-  return clothingMarkers.some((marker) => text.includes(marker)) ? "clothing" : "other";
+  return clothingMarkers.some((marker) => containsWord(text, marker))
+    ? "clothing"
+    : "other";
 }
 
 function inferMarketSegment(productData: ProductData): MarketSegment {
@@ -78,16 +90,16 @@ function calculateClothingCarbonKg(productData: ProductData, marketSegment: Mark
   const text = `${productData.title} ${productData.description}`.toLowerCase();
   let kg = BASE_CLOTHING_CARBON_KG;
 
-  if (text.includes("polyester")) kg += 2.4;
-  if (text.includes("denim")) kg += 1.7;
-  if (text.includes("leather")) kg += 4.2;
-  if (text.includes("linen")) kg -= 1.2;
-  if (text.includes("recycled")) kg -= 1.8;
+  if (containsWord(text, "polyester")) kg += 2.4;
+  if (containsWord(text, "denim")) kg += 1.7;
+  if (containsWord(text, "leather")) kg += 4.2;
+  if (containsWord(text, "linen")) kg -= 1.2;
+  if (containsWord(text, "recycled")) kg -= 1.8;
 
   if (marketSegment === "fast-fashion") kg += FAST_FASHION_ADJUSTMENT_KG;
   if (marketSegment === "secondhand") kg += SECONDHAND_ADJUSTMENT_KG;
 
-  return Math.max(1.2, Number((kg * deliveryMultiplier).toFixed(1)));
+  return Math.max(1.2, roundTo1Decimal(kg * deliveryMultiplier));
 }
 
 function buildEthicsTags(segment: MarketSegment, deliverySpeed: string): string[] {
@@ -128,8 +140,8 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
       carbonKgNumber >= 16 ? "High emissions" : carbonKgNumber >= 9 ? "Medium emissions" : "Lower emissions",
     alternativesCount,
     drivingEquivalent: `${Math.round(carbonKgNumber * DRIVING_EQ_MILES_PER_KG)} miles driven`,
-    treeGrowthEquivalent: `${Math.max(MIN_TREE_GROWTH_MONTHS, Math.round(carbonKgNumber * TREE_GROWTH_MONTHS_PER_KG))} months tree growth`,
-    phoneChargeEquivalent: `${Math.max(MIN_PHONE_CHARGES, Math.round(carbonKgNumber * PHONE_CHARGES_PER_KG))} phone charges`,
+    treeGrowthEquivalent: `${Math.max(MIN_TREE_GROWTH_MONTHS, Math.round(carbonKgNumber / KG_PER_TREE_GROWTH_MONTH))} months tree growth`,
+    phoneChargeEquivalent: `${Math.max(MIN_PHONE_CHARGES, Math.round(carbonKgNumber / KG_PER_PHONE_CHARGE))} phone charges`,
     source:
       "Estimated locally using scraped product text + backend-aligned heuristic stages (catalog, lifecycle, shipping, supply-chain signals).",
     ethicsScore,
@@ -167,7 +179,7 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
       },
     ],
     savingsText: "Switching saves ~",
-    savingsAmount: `${Math.max(MIN_SAVINGS_KG, Number((carbonKgNumber * SAVINGS_MULTIPLIER).toFixed(1)))} kg CO2`,
+    savingsAmount: `${Math.max(MIN_SAVINGS_KG, roundTo1Decimal(carbonKgNumber * SAVINGS_MULTIPLIER))} kg CO2`,
     savingsComparison: ` - like not driving ${Math.max(MIN_COMPARISON_MILES, Math.round(carbonKgNumber * MILES_COMPARISON_PER_KG))} miles`,
     agentProfile: {
       productTypes: [productType],
