@@ -24,7 +24,7 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
     deliverySpeed: "Same-day",
     deliveryIncrease: "+45%",
     deliveryNote:
-      "Same-day adds ~45% more CO2 vs standard, a common fast-fashion pattern on large marketplaces like Shein and Amazon.",
+      "Same-day adds ~45% more CO2 vs standard, a common fast-fashion pattern on large marketplaces like SHEIN and Amazon.",
     alternatives: [
       {
         name: "Organic cotton tee - Seattle co-op",
@@ -58,7 +58,7 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
       productTypes: ["clothing"],
       marketSegments: ["fast-fashion"],
       purpose:
-        "Help shoppers move away from fast-fashion purchases (for example Shein and Amazon listings) toward lower-emission, higher-ethics clothing alternatives.",
+        "Help shoppers move away from fast-fashion purchases (for example SHEIN and Amazon listings) toward lower-emission, higher-ethics clothing alternatives.",
       deepResearchEnabled: true,
       backendMode: "api-aggregator",
       apiPipeline: [
