@@ -5,8 +5,12 @@ import { allowedSites, mountId } from "./config";
 import { getProductTitle } from "./scraper";
 import { contentState } from "./state";
 
+function hostMatchesDomain(host: string, domain: string): boolean {
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
 const isAllowedSite = allowedSites.some((site) =>
-  window.location.hostname.includes(site)
+  hostMatchesDomain(window.location.hostname, site)
 );
 
 if (!isAllowedSite) {
@@ -98,7 +102,7 @@ function isLikelyProductPage(): boolean {
   const host = window.location.hostname;
   const path = window.location.pathname.toLowerCase();
 
-  if (host.includes("amazon.com")) {
+  if (hostMatchesDomain(host, "amazon.com")) {
     if (path.includes("/dp/") || path.includes("/gp/product/")) return true;
     return Boolean(
       document.querySelector(
@@ -107,7 +111,7 @@ function isLikelyProductPage(): boolean {
     );
   }
 
-  if (host.includes("target.com")) {
+  if (hostMatchesDomain(host, "target.com")) {
     if (path.includes("/p/")) return true;
     return Boolean(
       document.querySelector(
@@ -116,7 +120,7 @@ function isLikelyProductPage(): boolean {
     );
   }
 
-  if (host.includes("walmart.com")) {
+  if (hostMatchesDomain(host, "walmart.com")) {
     if (path.includes("/ip/")) return true;
     return Boolean(
       document.querySelector(
@@ -125,7 +129,7 @@ function isLikelyProductPage(): boolean {
     );
   }
 
-  if (host.includes("shein.com")) {
+  if (hostMatchesDomain(host, "shein.com")) {
     if (path.includes("-p-")) return true;
     return Boolean(
       document.querySelector(
