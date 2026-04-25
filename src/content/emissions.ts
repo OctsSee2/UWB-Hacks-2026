@@ -11,6 +11,15 @@ const BASE_CLOTHING_CARBON_KG = 10.2;
 const FAST_FASHION_ADJUSTMENT_KG = 2.1;
 const SECONDHAND_ADJUSTMENT_KG = -4.8;
 const CARBON_PERCENT_REFERENCE_KG = 22;
+const DRIVING_EQ_MILES_PER_KG = 2.3;
+const TREE_GROWTH_MONTHS_PER_KG = 1 / 4.5;
+const PHONE_CHARGES_PER_KG = 1 / 2;
+const MIN_TREE_GROWTH_MONTHS = 1;
+const MIN_PHONE_CHARGES = 1;
+const SAVINGS_MULTIPLIER = 0.62;
+const MIN_SAVINGS_KG = 1.8;
+const MILES_COMPARISON_PER_KG = 1.4;
+const MIN_COMPARISON_MILES = 4;
 const clothingMarkers = [
   "shirt",
   "tee",
@@ -118,9 +127,9 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
     emissionsLevel:
       carbonKgNumber >= 16 ? "High emissions" : carbonKgNumber >= 9 ? "Medium emissions" : "Lower emissions",
     alternativesCount,
-    drivingEquivalent: `${Math.round(carbonKgNumber * 2.3)} miles driven`,
-    treeGrowthEquivalent: `${Math.max(1, Math.round(carbonKgNumber / 4.5))} months tree growth`,
-    phoneChargeEquivalent: `${Math.max(1, Math.round(carbonKgNumber / 2))} phone charges`,
+    drivingEquivalent: `${Math.round(carbonKgNumber * DRIVING_EQ_MILES_PER_KG)} miles driven`,
+    treeGrowthEquivalent: `${Math.max(MIN_TREE_GROWTH_MONTHS, Math.round(carbonKgNumber * TREE_GROWTH_MONTHS_PER_KG))} months tree growth`,
+    phoneChargeEquivalent: `${Math.max(MIN_PHONE_CHARGES, Math.round(carbonKgNumber * PHONE_CHARGES_PER_KG))} phone charges`,
     source:
       "Estimated locally using scraped product text + backend-aligned heuristic stages (catalog, lifecycle, shipping, supply-chain signals).",
     ethicsScore,
@@ -158,14 +167,14 @@ export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData 
       },
     ],
     savingsText: "Switching saves ~",
-    savingsAmount: `${Math.max(1.8, Number((carbonKgNumber * 0.62).toFixed(1)))} kg CO2`,
-    savingsComparison: ` - like not driving ${Math.max(4, Math.round(carbonKgNumber * 1.4))} miles`,
+    savingsAmount: `${Math.max(MIN_SAVINGS_KG, Number((carbonKgNumber * SAVINGS_MULTIPLIER).toFixed(1)))} kg CO2`,
+    savingsComparison: ` - like not driving ${Math.max(MIN_COMPARISON_MILES, Math.round(carbonKgNumber * MILES_COMPARISON_PER_KG))} miles`,
     agentProfile: {
       productTypes: [productType],
       marketSegments: [marketSegment],
       purpose:
         "Classify clothing items and return lifecycle, shipping, and supply-chain signals to power lower-emission alternatives.",
-      deepResearchEnabled: true,
+      deepResearchEnabled: false,
       backendMode: "api-aggregator",
       apiPipeline: [
         "catalog-classifier",
