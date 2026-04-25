@@ -1,29 +1,40 @@
+# Food
  - Open Food Facts: food products
     - https://world.openfoodfacts.org
     - Example:
        - https://world.openfoodfacts.org/api/v0/product/737628064502.json
+ - Chomp: Food/nutrition
+    - https://chompthis.com/api/
+ - Kroger: Food
+       - Needs account ?
+    - https://developer.kroger.com/api-products
+ - openFDA: Drugs/foods/medical
+    - https://open.fda.gov/
+
+# Electronics
+ - Best Buy: Technology hardware
+    - https://bestbuyapis.github.io/api-documentation/#response-format
+ - Octopart: Electronic components
+    - https://octopart.com/api/v4/reference
+ - Digikey: Electronic components
+    - https://developer.digikey.com/products/product-information-v4/productsearch
+
+# Generic
+ - UPC Database: Barcodes for everything
+       - **Needs account**
+    - https://upcdatabase.org/api
+ - Product Search API: Products in general
+       - **Needs account**
+    - https://rapidapi.com/remote-skills-remote-skills-default/api/product-search-api/playground/apiendpoint_f07ce008-997f-48dd-aadf-a407582baf44
+ - Nofolo: Barcodes for everything
+    - https://nofolo.com/docs/barcode-api
+
+# Other
  - Makeup API: makeup products
     - https://makeup-api.herokuapp.com
     - Example:
        - https://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline
- - UPC Database: Barcodes for everything
-       - **Needs account**
-    - https://upcdatabase.org/api
- - Nofolo: Barcodes for everything
-    - https://nofolo.com/docs/barcode-api
- - Best Buy: Technology hardware
-    - https://bestbuyapis.github.io/api-documentation/#response-format
  - Climatiq: Environmental footprint
     - https://www.climatiq.io/docs/api-reference
- - Product Search API: Products in general
-       - **Needs account**
-    - https://rapidapi.com/remote-skills-remote-skills-default/api/product-search-api/playground/apiendpoint_f07ce008-997f-48dd-aadf-a407582baf44
- - Chomp: Food/nutrition
-    - https://chompthis.com/api/
- - openFDA: Drugs/foods/medical
-    - https://open.fda.gov/
- - Kroger: Food
-       - Needs account ?
-    - https://developer.kroger.com/api-products
  - The World Bank: Global/country development
     - https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api-documentation
