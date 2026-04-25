@@ -31,7 +31,6 @@ const clothingMarkers = [
   "pants",
   "skirt",
   "sweater",
-  "top",
   "coat",
   "shorts",
   "apparel",
