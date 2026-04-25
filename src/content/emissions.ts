@@ -57,8 +57,8 @@ function inferProductType(productData: ProductData): ProductType {
 
 function inferMarketSegment(productData: ProductData): MarketSegment {
   const text = `${productData.title} ${productData.brand} ${productData.description} ${productData.domain}`.toLowerCase();
-  if (secondhandMarkers.some((marker) => text.includes(marker))) return "secondhand";
-  if (fastFashionMarkers.some((marker) => text.includes(marker))) return "fast-fashion";
+  if (secondhandMarkers.some((marker) => containsWord(text, marker))) return "secondhand";
+  if (fastFashionMarkers.some((marker) => containsWord(text, marker))) return "fast-fashion";
   return "mainstream";
 }
 
