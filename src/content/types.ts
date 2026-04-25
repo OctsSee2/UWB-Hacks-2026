@@ -19,6 +19,11 @@ export type Alternative = {
   tags: string;
 };
 
+export type DemoAgentProfile = {
+  productTypes: string[];
+  purpose: string;
+};
+
 export type ImpactStats = {
   savedKg: string;
   nextMilestone: string;
@@ -33,6 +38,7 @@ export type ImpactStats = {
 
 export type DemoAnalysisData = {
   productTitle: string;
+  productType: string;
   carbonKg: string;
   carbonPercent: number;
   emissionsLevel: string;
@@ -50,6 +56,7 @@ export type DemoAnalysisData = {
   savingsText: string;
   savingsAmount: string;
   savingsComparison: string;
+  agentProfile: DemoAgentProfile;
   impact: ImpactStats;
 };
 

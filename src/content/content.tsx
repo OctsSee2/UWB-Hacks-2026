@@ -125,5 +125,14 @@ function isLikelyProductPage(): boolean {
     );
   }
 
+  if (host.includes("shein.com")) {
+    if (path.includes("-p-")) return true;
+    return Boolean(
+      document.querySelector(
+        ".product-intro__head-name, .product-intro__title, [class*='product-intro']"
+      )
+    );
+  }
+
   return false;
 }

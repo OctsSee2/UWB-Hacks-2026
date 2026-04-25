@@ -1,4 +1,9 @@
-export const allowedSites: string[] = ["amazon.com", "target.com", "walmart.com"];
+export const allowedSites: string[] = [
+  "amazon.com",
+  "target.com",
+  "walmart.com",
+  "shein.com",
+];
 export const mountId = "carbon-cart-root";
 export const onboardingKey = "carboncart_onboarded_v1";
 export const bubblePositionKey = "carboncart_bubble_position_v1";
