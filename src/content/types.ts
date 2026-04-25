@@ -22,6 +22,11 @@ export type Alternative = {
 export type ProductType = "clothing" | "other";
 export type MarketSegment = "fast-fashion" | "mainstream" | "secondhand";
 export type BackendMode = "api-aggregator" | "mock-local";
+export type ApiPipelineStage =
+  | "catalog-classifier"
+  | "lifecycle-emissions-api"
+  | "shipping-emissions-api"
+  | "supply-chain-risk-api";
 
 export type DemoAgentProfile = {
   productTypes: ProductType[];
@@ -29,7 +34,7 @@ export type DemoAgentProfile = {
   purpose: string;
   deepResearchEnabled: boolean;
   backendMode: BackendMode;
-  apiPipeline: string[];
+  apiPipeline: ApiPipelineStage[];
 };
 
 export type ImpactStats = {
