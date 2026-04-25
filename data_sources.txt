@@ -10,6 +10,9 @@
     - https://developer.kroger.com/api-products
  - openFDA: Drugs/foods/medical
     - https://open.fda.gov/
+ - FAOSTAT: Food/Agriculture
+       - **Needs account**
+    - https://www.fao.org/statistics/highlights-archive/highlights-detail/faostat-launches-a-new-api-developer-portal-to-make-data-access-easier/en
 
 # Electronics
  - Best Buy: Technology hardware
@@ -29,12 +32,17 @@
  - Nofolo: Barcodes for everything
     - https://nofolo.com/docs/barcode-api
 
+# Environmental
+ - Building Transparency
+       - **Needs account**
+    - https://docs.buildingtransparency.org/ec3/api-and-integrations
+ - Climatiq: Environmental footprint
+    - https://www.climatiq.io/docs/api-reference
+
 # Other
  - Makeup API: makeup products
     - https://makeup-api.herokuapp.com
     - Example:
        - https://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline
- - Climatiq: Environmental footprint
-    - https://www.climatiq.io/docs/api-reference
  - The World Bank: Global/country development
     - https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api-documentation
