@@ -1,0 +1,20 @@
+# Problem
+ - Being an ethical online shopper can be difficult
+ - Data on a product's origin may be hard to find
+ - Data may not be easy to interpret (when it is available)
+
+# Target Audience
+ - Online shoppers concerned with general ethics
+ - Online shoppers who want to support a specific cause
+
+# Solutions
+ - Deep research tool that leverages mass API and traditional algorithms to gather data
+    - Gen. AI is used to present data and determine how (much) and why a product supports a user's cause
+
+# Unique Value Proposition (old)
+ - All the necessary data to do deep research on products you buy in one click
+    - Evaluate the data at any level of complexity that you are comfortable with to make quick and well-informed decisions that benefit both the world and yourself
+
+# Unique Value Proposition (new)
+ - All the necessary data to do deep research on products you buy in in one click
+    - Verify and dig deeper into the data at your discretion and comfort level

@@ -28,6 +28,9 @@ Primary control flow:
  - Use all information about product to create *Inferences*
  - Push *Inferences* to frontend
 
+Webpage Scraper:
+ - <TODO:>
+
 DB Anchor Table:
  - Match *Broad product categories* to barcode IDs
  - Whenever a product needs to be looked up:
