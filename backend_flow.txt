@@ -1,6 +1,6 @@
 Definitions:
- - Broad product categories can be Tables, Bananas, Gaming PCs, Lip Gloss, Blenders, Shelves, TVs
- - *Inferences* is an object that contains insights about a product, which can contain varying components depending on the product
+ - *Broad product categories* can be Tables, Bananas, Gaming PCs, Lip Gloss, Blenders, Shelves, TVs
+ - *RawDataInferences* is an object that contains insights about a product, which can contain varying components depending on the product
     - Company reputation
     - Country of origin
     - Functionality
@@ -18,15 +18,24 @@ Definitions:
        - Shipping fuel usage
     - Carbon footprint
     - Overall ethicalness rating for labor conditions, environment, animal cruelty, etc...
+ - *CalculationData* is an object that contains an *CalculationStep* object array and a *CalculationSource* object array
+    - *CalculationStep* is an object that contain an action described in English as a string done during a calculation
+    - *CalculationSource* is an object that contains either a URL, API, or other linkable source used to perform the calculation
+ - *AuditTrail* is an object that contains an array of *CalculationData* objects sorted in reverse chronological order (last calculations first)
 
 Primary control flow:
  - Product is detected from frontend
+ - Create a *CalculationData* array
+    - For the next several steps until an *Inferences* obeject is made:
+       - Each time an action that is done that involes querying an API, doing math, doing AI reasoning, as well other actions that justify the calculation of a an entry in the final *RawDataInferences* object:
+          - Compile a *CalculationData* object for it
  - Scrape webpage for any product information
  - Query using Barcode IDs Anchor Table to get closest matching product details
     - Only use details that are missing from webpage's product information
  - Query any other DB APIs using DB Anchor Table for additional relevant product information
- - Use all information about product to create *Inferences*
- - Push *Inferences* to frontend
+ - Use all information about product to create an *RawDataInferences* object
+ - Push *RawDataInferences* to frontend
+ - Push *CalculationData* to frontend
 
 Webpage Scraper:
  - <TODO:>

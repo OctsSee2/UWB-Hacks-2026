@@ -1,3 +1,6 @@
+# IMPORTANT: this has things beyond scope of demo
+#            we only need to focus on clothing, electronics, environmental, and barcodes
+
 # Food
  - Open Food Facts: food products
     - https://world.openfoodfacts.org
@@ -25,7 +28,7 @@
  - Digikey: Electronic components
     - https://developer.digikey.com/products/product-information-v4/productsearch
 
-# Generic
+# Barcodes
  - UPC Database: Barcodes for everything
        - **Needs account**
     - https://upcdatabase.org/api

@@ -1,3 +1,6 @@
+# IMPORTANT: this has things beyond scope of demo
+#            we only need to focus on clothing and electronics
+
 # Food
  - Goldfish crackers
     - https://www.amazon.com/Pepperidge-Farm-Goldfish-Crackers-Classic/dp/B01GQ5GQEG/
