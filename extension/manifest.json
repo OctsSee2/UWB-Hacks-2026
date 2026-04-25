@@ -3,7 +3,7 @@
   "name": "CarbonCart",
   "version": "1.0",
   "description": "Shows estimated product emissions while shopping online.",
-  "permissions": ["activeTab"],
+  "permissions": ["activeTab", "storage"],
   "host_permissions": ["https://*/*"],
   "content_scripts": [
     {
@@ -13,7 +13,21 @@
         "https://www.walmart.com/*"
       ],
       "js": ["dist/content.js"],
-      "css": ["styles.css"]
+      "css": ["styles.css", "content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/sprites/polar-bear-sheet.png",
+        "assets/sprites/frames/*.png",
+        "assets/sprites/frames/manifest.json"
+      ],
+      "matches": [
+        "https://www.amazon.com/*",
+        "https://www.target.com/*",
+        "https://www.walmart.com/*"
+      ]
     }
   ]
 }
