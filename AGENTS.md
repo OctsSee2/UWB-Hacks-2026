@@ -4,11 +4,14 @@ This file guides coding agents working in the **UWB-Hacks-2026 overview branch c
 
 ## Project context
 
-This branch currently contains planning/reference documents, not executable app code:
+This branch contains planning/reference documents and TypeScript type definitions:
 
 - `backend_flow.txt` — product inference and control-flow design
-- `data_sources.txt` — candidate external APIs by domain
-- `demo_products.txt` — sample product URLs for demo/testing scenarios
+- `data_sources_old.txt` — candidate external APIs by domain
+- `demo_products_old.txt` — sample product URLs for demo/testing scenarios
+- `product_types.txt` — broad product category taxonomy
+- `purpose.txt` — problem statement and UVP
+- `types/` — TypeScript interfaces and enums defining the data model
 
 Use these files as source-of-truth context unless the user gives newer instructions.
 
@@ -20,6 +23,59 @@ The project vision is a shopping assistant that:
 - Enriches product data using barcode/category anchors and external APIs
 - Produces product **inferences** (reputation, origin, functionality, pricing, reviews, ethics, environmental impact, recalls, etc.)
 - Returns those inferences to frontend UX
+  
+##TypeScript types reference
+
+All types live in `types/`. Agents should read these before generating or editing any data-model code.
+
+### `ProductType` (`types/product_types.ts`)
+Enum of broad product categories. Current values: `Clothing`, `Electronic`.
+More specific subtypes (Shirt, Pants, Phone, Laptop, etc.) are listed in `product_types.txt` and should be added to this enum as the model matures.
+
+### `ScrapedData` (`types/scraped_data.ts`)
+Data extracted directly from a product webpage before any AI enrichment:
+- `productTitle: string`
+- `components: ProductComponent[]` — ingredients, parts, fabric types, etc.
+- `features: ProductFeature[]`
+- `weight: ProductWeight`
+- `reviewsRating: number`
+- `reviewsCount: number`
+- `overallOrigin: Country | null | string`
+
+### `RawDataInference` (`types/raw_data_inferences.ts`)
+Structured enrichment object built after querying external APIs. Fields currently defined:
+- `companyReputation: CompanyReputation`
+- `countryOrigin: Country | null`
+
+Planned fields (still TODO): functionality, price, ingredients, user review sentiment, alternative products, healthiness, FDA info, product recalls, shipping info, carbon footprint, overall ethics rating.
+
+### `AIInterpretedInference` (`types/ai_interpreted_inference.ts`)
+AI-generated layer on top of `RawDataInference`. Currently an empty interface — to be filled as the AI interpretation layer is designed.
+
+### `CompanyReputation` (`types/company_reputation.ts`)
+- `normalizedRating: number` — 0.0 to 1.0
+- `description: string`
+
+### `ProductComponent` (`types/product_component.ts`)
+Represents one ingredient, part, or material:
+- `name: string`
+- `details: string[]`
+- `countryOrigin: Country | null`
+
+### `ProductFeature` (`types/product_feature.ts`)
+A single product feature:
+- `name: string`
+- `description: string`
+
+### `ProductWeight` (`types/product_weight.ts`)
+- `value: number`
+- `unit: WeightUnit`
+
+### `WeightUnit` (`types/weight_unit.ts`)
+Union type: `"gram" | "pound" | "ton" | "kilogram"`
+
+### `Country` (`types/country.ts`)
+ISO 3166-1 alpha-2 union type covering all recognized country codes (e.g. `"US"`, `"CN"`, `"DE"`).
 
 ## Agent priorities
 
