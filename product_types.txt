@@ -1,0 +1,16 @@
+ - Clothing
+ - Shirt
+ - Pants
+ - 
+
+ - Electronic
+ - Computer
+ - Computer Mouse
+ - Phone
+ - Charger
+ - Macbook
+ - Lenovo laptop
+ - Dell laptop
+ - Asus laptop
+ - Mac mini
+ - 

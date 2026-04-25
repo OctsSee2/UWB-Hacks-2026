@@ -14,6 +14,9 @@
        - **Needs account**
     - https://www.fao.org/statistics/highlights-archive/highlights-detail/faostat-launches-a-new-api-developer-portal-to-make-data-access-easier/en
 
+# Clothing
+ - 
+
 # Electronics
  - Best Buy: Technology hardware
     - https://bestbuyapis.github.io/api-documentation/#response-format
