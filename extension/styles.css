@@ -66,7 +66,6 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--cc-high-fg);
   color: #fff;
   display: grid;
   place-items: center;
@@ -76,6 +75,18 @@
   letter-spacing: -0.01em;
   flex-shrink: 0;
   position: relative;
+}
+
+.cc-float-circle.low {
+  background: var(--cc-low-fg);
+}
+
+.cc-float-circle.medium {
+  background: var(--cc-med-fg);
+}
+
+.cc-float-circle.high {
+  background: var(--cc-high-fg);
 }
 
 .cc-float-circle::after {
@@ -216,6 +227,16 @@
   text-transform: uppercase;
 }
 
+.cc-badge-pill.low {
+  background: var(--cc-low-bg);
+  color: var(--cc-low-fg);
+}
+
+.cc-badge-pill.medium {
+  background: var(--cc-med-bg);
+  color: var(--cc-med-fg);
+}
+
 .cc-badge-pill.high {
   background: var(--cc-high-bg);
   color: var(--cc-high-fg);
@@ -324,6 +345,14 @@
   letter-spacing: -0.02em;
 }
 
+.cc-bignum.low {
+  color: var(--cc-low-fg);
+}
+
+.cc-bignum.medium {
+  color: var(--cc-med-fg);
+}
+
 .cc-bignum.high {
   color: var(--cc-high-fg);
 }
@@ -353,6 +382,14 @@
   transition: width 0.6s ease;
 }
 
+.cc-progress-fill.low {
+  background: var(--cc-low-fg);
+}
+
+.cc-progress-fill.medium {
+  background: var(--cc-med-fg);
+}
+
 .cc-progress-fill.high {
   background: var(--cc-high-fg);
 }
@@ -372,7 +409,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 26px;
+  min-height: 26px;
   padding: 0 10px;
   border-radius: var(--cc-r-pill);
   font-size: 11px;
@@ -380,6 +417,7 @@
   background: var(--cc-linen);
   color: var(--cc-text);
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .cc-pill.ghost {
@@ -411,6 +449,10 @@
   border-radius: var(--cc-r-card);
 }
 
+.cc-delivery > div:last-child {
+  min-width: 0;
+}
+
 .cc-delivery-icon {
   flex-shrink: 0;
   width: 28px;
@@ -437,7 +479,18 @@
 
 .cc-compare {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+.cc-compare .cc-pill {
+  height: auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .cc-cta {

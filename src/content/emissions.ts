@@ -269,7 +269,7 @@ function buildDemoAnalysisData(
   const totalCarbon = emissions.totalEmissionsKg;
   const carbonPercent = Math.min(100, (totalCarbon / 20) * 100);
   const emissionsLevel =
-    totalCarbon > 15 ? "High emissions" : totalCarbon > 5 ? "Medium emissions" : "Low emissions";
+    totalCarbon > 20 ? "High emissions" : totalCarbon > 10 ? "Medium emissions" : "Low emissions";
   const confidence = emissions.originEstimate.confidence;
   const weightDescription = productData.weightKg
     ? "Provided by listing."

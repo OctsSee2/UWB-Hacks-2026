@@ -13,6 +13,8 @@ type CarbonCartAppProps = {
 
 type HeaderProps = {
   onClose: () => void;
+  emissionsLevel: string;
+  emissionsLevelClass: EmissionsLevelClass;
 };
 
 type TabsProps = {
@@ -32,6 +34,8 @@ type AnalysisPanelProps = {
   onSeeAlternatives: () => void;
   showAudit: boolean;
   onToggleAudit: () => void;
+  emissionsLevelClass: EmissionsLevelClass;
+  ethicsScoreClass: EmissionsLevelClass;
 };
 
 type DemoPanelProps = {
@@ -47,6 +51,21 @@ type ImpactPanelProps = {
 };
 
 type TabView = Exclude<ViewName, "onboarding">;
+type EmissionsLevelClass = "low" | "medium" | "high";
+
+function getEmissionsLevelClass(level: string): EmissionsLevelClass {
+  const normalized = level.toLowerCase();
+
+  if (normalized.includes("low")) return "low";
+  if (normalized.includes("medium")) return "medium";
+  return "high";
+}
+
+function getEthicsScoreClass(score: number): EmissionsLevelClass {
+  if (score >= 60) return "low";
+  if (score > 30) return "medium";
+  return "high";
+}
 
 export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const badgeRef = useRef<HTMLButtonElement | null>(null);
@@ -71,6 +90,8 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const [analysis, setAnalysis] = useState<DemoAnalysisData>(initialAnalysis);
   const [showAudit, setShowAudit] = useState(false);
   const displayTitle = analysis.productTitle || productTitle;
+  const emissionsLevelClass = getEmissionsLevelClass(analysis.emissionsLevel);
+  const ethicsScoreClass = getEthicsScoreClass(analysis.ethicsScore);
 
   useEffect(() => {
     setAnalysis(initialAnalysis);
@@ -156,7 +177,7 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   return (
     <>
       <button ref={badgeRef} className="cc-float-badge" aria-label="Open CarbonCart" onClick={togglePopup}>
-        <div className="cc-float-circle">
+        <div className={`cc-float-circle ${emissionsLevelClass}`}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: "15px", lineHeight: 1 }}>{analysis.carbonKg}</div>
             <div style={{ fontSize: "9px", fontWeight: 500, opacity: 0.9 }}>kg</div>
@@ -171,7 +192,11 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
       <section className={`cc-popup-shell ${open ? "" : "cc-hidden"}`} aria-live="polite">
         <div className="cc-popup-pointer" />
         <div className={`cc-popup ${onboardingMode ? "cc-onboarding-mode" : ""}`}>
-          <Header onClose={() => setOpen(false)} />
+          <Header
+            onClose={() => setOpen(false)}
+            emissionsLevel={analysis.emissionsLevel}
+            emissionsLevelClass={emissionsLevelClass}
+          />
           <Tabs view={view} onChange={setPanelView} />
           <OnboardingPanel active={view === "onboarding"} onStart={completeOnboarding} />
           <AnalysisPanel
@@ -181,6 +206,8 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
             onSeeAlternatives={() => setPanelView("alternatives")}
             showAudit={showAudit}
             onToggleAudit={() => setShowAudit((current) => !current)}
+            emissionsLevelClass={emissionsLevelClass}
+            ethicsScoreClass={ethicsScoreClass}
           />
           <AlternativesPanel active={view === "alternatives"} analysis={analysis} />
           <ImpactPanel active={view === "impact"} analysis={analysis} totalCO2Saved={totalCO2Saved} onSetTotalCO2Saved={handleSetCO2} />
@@ -190,7 +217,7 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   );
 }
 
-function Header({ onClose }: HeaderProps) {
+function Header({ onClose, emissionsLevel, emissionsLevelClass }: HeaderProps) {
   return (
     <div className="cc-header">
       <div className="cc-logo">
@@ -198,9 +225,9 @@ function Header({ onClose }: HeaderProps) {
         <span>CarbonCart</span>
       </div>
       <div className="cc-header-right">
-        <span className="cc-badge-pill high">
+        <span className={`cc-badge-pill ${emissionsLevelClass}`}>
           <span className="cc-pill-dot" />
-          HIGH EMISSIONS
+          {emissionsLevel}
         </span>
         <button className="cc-close" aria-label="Close CarbonCart" onClick={onClose}>{"\u00d7"}</button>
       </div>
@@ -262,6 +289,8 @@ function AnalysisPanel({
   onSeeAlternatives,
   showAudit,
   onToggleAudit,
+  emissionsLevelClass,
+  ethicsScoreClass,
 }: AnalysisPanelProps) {
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="analysis">
@@ -285,10 +314,10 @@ function AnalysisPanel({
             </button>
           </div>
           <div className="cc-bignum-row">
-            <span className="cc-bignum high">{analysis.carbonKg}</span>
+            <span className={`cc-bignum ${emissionsLevelClass}`}>{analysis.carbonKg}</span>
             <span className="cc-bignum-unit">kg CO2e</span>
           </div>
-          <div className="cc-progress"><div className="cc-progress-fill high" style={{ width: `${analysis.carbonPercent}%` }} /></div>
+          <div className="cc-progress"><div className={`cc-progress-fill ${emissionsLevelClass}`} style={{ width: `${analysis.carbonPercent}%` }} /></div>
           {showAudit && (
             <div style={{ marginTop: "12px", padding: "12px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.12)" }}>
               <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px" }}>Calculation details</div>
@@ -316,10 +345,10 @@ function AnalysisPanel({
         <div className="cc-card">
           <div className="cc-label">Ethics score</div>
           <div className="cc-bignum-row">
-            <span className="cc-bignum high">{analysis.ethicsScore}</span>
+            <span className={`cc-bignum ${ethicsScoreClass}`}>{analysis.ethicsScore}</span>
             <span className="cc-bignum-suffix">/100</span>
           </div>
-          <div className="cc-progress"><div className="cc-progress-fill high" style={{ width: `${analysis.ethicsScore}%` }} /></div>
+          <div className="cc-progress"><div className={`cc-progress-fill ${ethicsScoreClass}`} style={{ width: `${analysis.ethicsScore}%` }} /></div>
           <div className="cc-pill-row">
             {analysis.ethicsTags.map((tag) => <span key={tag} className="cc-pill ghost">{tag}</span>)}
           </div>
