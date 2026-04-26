@@ -1,13 +1,67 @@
 export type ProductData = {
   title: string;
+  productName: string;
   price: string;
   brand: string;
   category: string;
+  seller: string;
+  shipsFrom: string | null;
+  itemLocation: string;
+  deliveryText: string;
+  retailer: string;
   imageUrl: string;
   shipping: string;
   description: string;
   url: string;
   domain: string;
+  ingredients: string;
+  country: string | null;
+  componentCountry: string | null;
+  shippingZipcode: string;
+  weightKg: number | null;
+  components?: string[];
+  componentOrigins?: Record<string, string[]>;
+  originEstimate?: OriginEstimate;
+  distanceMiles?: number;
+};
+
+export type ScrapedProduct = ProductData;
+
+export type ProductComponents = {
+  category: string;
+  components: string[];
+};
+
+export type OriginType = "zip" | "cityState" | "seller" | "retailer" | "country";
+
+export type ConfidenceLevel = "high" | "medium" | "low" | "very low";
+
+export type OriginEstimate = {
+  origin: string;
+  originType: OriginType;
+  confidence: ConfidenceLevel;
+  zip?: string;
+  country?: string;
+  latitude: number;
+  longitude: number;
+};
+
+export type EmissionsResult = {
+  components: string[];
+  componentOrigins: Record<string, string[]>;
+  originEstimate: OriginEstimate;
+  weightKg: number;
+  distanceMiles: number;
+  emissionFactor: number;
+  productionEmissionsKg: number;
+  shippingEmissionsKg: number;
+  totalEmissionsKg: number;
+};
+
+export type AuditEntry = {
+  title: string;
+  value: string;
+  description?: string;
 };
 
 export type Alternative = {
@@ -47,6 +101,7 @@ export type DemoAnalysisData = {
   deliveryIncrease: string;
   deliveryNote: string;
   alternatives: Alternative[];
+  auditTrail: AuditEntry[];
   savingsText: string;
   savingsAmount: string;
   savingsComparison: string;

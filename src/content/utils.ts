@@ -4,7 +4,12 @@ export function clamp(value: number, min: number, max: number): number {
 
 export function getText(selectors: string[]): string {
   for (const selector of selectors) {
-    const el = document.querySelector(selector);
+    let el: Element | null = null;
+    try {
+      el = document.querySelector(selector);
+    } catch {
+      continue;
+    }
     const text = el?.textContent?.trim();
     if (text) {
       return text;
@@ -15,7 +20,12 @@ export function getText(selectors: string[]): string {
 
 export function getImage(selectors: string[]): string {
   for (const selector of selectors) {
-    const el = document.querySelector<HTMLImageElement>(selector);
+    let el: HTMLImageElement | null = null;
+    try {
+      el = document.querySelector<HTMLImageElement>(selector);
+    } catch {
+      continue;
+    }
     if (el) {
       return el.src || el.getAttribute("data-old-hires") || "";
     }

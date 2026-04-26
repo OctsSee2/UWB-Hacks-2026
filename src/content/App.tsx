@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { onboardingKey } from "./config";
 import { readTotalCO2Saved } from "./co2Storage";
 import { setupDraggableBubble } from "./drag";
-import { getDemoAnalysisData, getClassificationFallback } from "./emissions";
-import { IconArrow, IconBolt, IconCheck, IconLeaf, IconLogo } from "./icons";
+import { calculateProductAnalysis, getDemoAnalysisData } from "./emissions";
+import { IconArrow, IconBolt, IconCheck, IconInfo, IconLeaf, IconLogo } from "./icons";
 import { scrapeProductData } from "./scraper";
 import type { DemoAnalysisData, ViewName } from "./types";
 
@@ -30,6 +30,8 @@ type AnalysisPanelProps = {
   analysis: DemoAnalysisData;
   productTitle: string;
   onSeeAlternatives: () => void;
+  showAudit: boolean;
+  onToggleAudit: () => void;
 };
 
 type DemoPanelProps = {
@@ -65,8 +67,15 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   };
 
   const productData = useMemo(() => scrapeProductData(), [productTitle]);
-  const analysis = useMemo(() => getDemoAnalysisData(productData), [productData]);
+  const initialAnalysis = useMemo(() => getDemoAnalysisData(productData), [productData]);
+  const [analysis, setAnalysis] = useState<DemoAnalysisData>(initialAnalysis);
+  const [showAudit, setShowAudit] = useState(false);
   const displayTitle = analysis.productTitle || productTitle;
+
+  useEffect(() => {
+    setAnalysis(initialAnalysis);
+    setShowAudit(false);
+  }, [initialAnalysis]);
 
   useEffect(() => {
     console.log("Scraped Product:", productData);
@@ -80,27 +89,15 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   useEffect(() => {
     let isActive = true;
 
-    async function classifyFallback() {
-      const aiResult = await getClassificationFallback(productData);
-
-      if (!isActive || !aiResult) {
-        return;
-      }
-
-      const enrichedProduct = {
-        ...productData,
-        category: aiResult.category,
-        components: aiResult.components,
-      };
-
-      console.log("AI classification fallback result:", aiResult);
-      chrome.runtime.sendMessage({
-        type: "PRODUCT_CLASSIFIED",
-        data: enrichedProduct,
+    calculateProductAnalysis(productData)
+      .then((nextAnalysis) => {
+        if (isActive) {
+          setAnalysis(nextAnalysis);
+        }
+      })
+      .catch((error) => {
+        console.error("Product emissions analysis failed:", error);
       });
-    }
-
-    void classifyFallback();
 
     return () => {
       isActive = false;
@@ -177,7 +174,14 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
           <Header onClose={() => setOpen(false)} />
           <Tabs view={view} onChange={setPanelView} />
           <OnboardingPanel active={view === "onboarding"} onStart={completeOnboarding} />
-          <AnalysisPanel active={view === "analysis"} analysis={analysis} productTitle={displayTitle} onSeeAlternatives={() => setPanelView("alternatives")} />
+          <AnalysisPanel
+            active={view === "analysis"}
+            analysis={analysis}
+            productTitle={displayTitle}
+            onSeeAlternatives={() => setPanelView("alternatives")}
+            showAudit={showAudit}
+            onToggleAudit={() => setShowAudit((current) => !current)}
+          />
           <AlternativesPanel active={view === "alternatives"} analysis={analysis} />
           <ImpactPanel active={view === "impact"} analysis={analysis} totalCO2Saved={totalCO2Saved} onSetTotalCO2Saved={handleSetCO2} />
         </div>
@@ -256,6 +260,8 @@ function AnalysisPanel({
   analysis,
   productTitle,
   onSeeAlternatives,
+  showAudit,
+  onToggleAudit,
 }: AnalysisPanelProps) {
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="analysis">
@@ -266,12 +272,39 @@ function AnalysisPanel({
 
       <div className="cc-body">
         <div className="cc-card">
-          <div className="cc-label">Carbon footprint</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+            <div className="cc-label">Carbon footprint</div>
+            <button
+              type="button"
+              onClick={onToggleAudit}
+              aria-expanded={showAudit}
+              aria-label="Show carbon calculation details"
+              style={{ border: "none", background: "transparent", cursor: "pointer", color: "inherit", padding: 0 }}
+            >
+              <IconInfo size={14} />
+            </button>
+          </div>
           <div className="cc-bignum-row">
             <span className="cc-bignum high">{analysis.carbonKg}</span>
             <span className="cc-bignum-unit">kg CO2e</span>
           </div>
           <div className="cc-progress"><div className="cc-progress-fill high" style={{ width: `${analysis.carbonPercent}%` }} /></div>
+          {showAudit && (
+            <div style={{ marginTop: "12px", padding: "12px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.12)" }}>
+              <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px" }}>Calculation details</div>
+              {analysis.auditTrail.map((entry) => (
+                <div key={entry.title} style={{ marginBottom: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", fontSize: "13px", fontWeight: 600 }}>
+                    <span>{entry.title}</span>
+                    <span style={{ textAlign: "right" }}>{entry.value}</span>
+                  </div>
+                  {entry.description ? (
+                    <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.8 }}>{entry.description}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="cc-pill-row">
             <span className="cc-pill">{"\u2248"} {analysis.drivingEquivalent}</span>
             <span className="cc-pill">{"\u2248"} {analysis.treeGrowthEquivalent}</span>
