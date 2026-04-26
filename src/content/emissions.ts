@@ -1,4 +1,61 @@
+import { classifyProductWithAI } from "./ai";
+import type { AIProductClassification } from "./ai";
 import type { DemoAnalysisData, ProductData } from "./types";
+
+const UNKNOWN_CATEGORY = "unknown";
+
+type ProductDataWithComponents = ProductData & {
+  components?: string[];
+  subcategory?: string;
+  classificationConfidence?: AIProductClassification["confidence"];
+};
+
+function getExistingComponents(productData: ProductData): string[] {
+  const maybeComponents = (productData as ProductDataWithComponents).components;
+  return Array.isArray(maybeComponents) ? maybeComponents : [];
+}
+
+function shouldUseAIClassification(category: string, components: string[]): boolean {
+  return !category || category === UNKNOWN_CATEGORY || components.length === 0;
+}
+
+export async function getClassificationFallback(
+  productData: ProductData
+): Promise<AIProductClassification | null> {
+  const category = productData.category?.trim().toLowerCase();
+  const components = getExistingComponents(productData);
+
+  if (shouldUseAIClassification(category, components)) {
+    return classifyProductWithAI(productData);
+  }
+
+  return null;
+}
+
+export async function getProductDataForEmissions(
+  productData: ProductData
+): Promise<ProductDataWithComponents> {
+  const category = productData.category?.trim().toLowerCase();
+  const components = getExistingComponents(productData);
+
+  if (!shouldUseAIClassification(category, components)) {
+    return { ...productData, components };
+  }
+
+  const aiResult = await classifyProductWithAI(productData);
+
+  if (!aiResult) {
+    return { ...productData, components };
+  }
+
+  return {
+    ...productData,
+    category: aiResult.category,
+    subcategory: aiResult.subcategory,
+    components: aiResult.components,
+    classificationConfidence: aiResult.confidence,
+  };
+}
 
 export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData {
   return {

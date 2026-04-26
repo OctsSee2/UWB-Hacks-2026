@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { onboardingKey } from "./config";
 import { readTotalCO2Saved } from "./co2Storage";
 import { setupDraggableBubble } from "./drag";
-import { getDemoAnalysisData } from "./emissions";
+import { getDemoAnalysisData, getClassificationFallback } from "./emissions";
 import { IconArrow, IconBolt, IconCheck, IconLeaf, IconLogo } from "./icons";
 import { scrapeProductData } from "./scraper";
 import type { DemoAnalysisData, ViewName } from "./types";
@@ -75,6 +75,36 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
       type: "PRODUCT_SCRAPED",
       data: productData,
     });
+  }, [productData]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function classifyFallback() {
+      const aiResult = await getClassificationFallback(productData);
+
+      if (!isActive || !aiResult) {
+        return;
+      }
+
+      const enrichedProduct = {
+        ...productData,
+        category: aiResult.category,
+        components: aiResult.components,
+      };
+
+      console.log("AI classification fallback result:", aiResult);
+      chrome.runtime.sendMessage({
+        type: "PRODUCT_CLASSIFIED",
+        data: enrichedProduct,
+      });
+    }
+
+    void classifyFallback();
+
+    return () => {
+      isActive = false;
+    };
   }, [productData]);
 
   useEffect(() => {
