@@ -40,6 +40,16 @@ type DemoPanelProps = {
 
 type TabView = Exclude<ViewName, "onboarding">;
 
+function getEmissionClass(emissionsLevel: string): string {
+  if (emissionsLevel.includes("Low")) return "low";
+  if (emissionsLevel.includes("Medium")) return "med";
+  return "high";
+}
+
+function getEthicsClass(ethicsScore: number): string {
+  return ethicsScore >= 50 ? "low" : "high";
+}
+
 export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const badgeRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -132,7 +142,11 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   return (
     <>
       <button ref={badgeRef} className="cc-float-badge" aria-label="Open CarbonCart" onClick={togglePopup}>
-        <div className="cc-float-circle">
+        <div className="cc-float-circle" style={{
+          background: getEmissionClass(analysis.emissionsLevel) === 'low' ? 'var(--cc-low-fg)' :
+                     getEmissionClass(analysis.emissionsLevel) === 'med' ? 'var(--cc-med-fg)' :
+                     'var(--cc-high-fg)'
+        }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: "15px", lineHeight: 1 }}>{analysis.carbonKg}</div>
             <div style={{ fontSize: "9px", fontWeight: 500, opacity: 0.9 }}>kg</div>
@@ -261,10 +275,10 @@ function AnalysisPanel({
             </button>
           </div>
           <div className="cc-bignum-row">
-            <span className="cc-bignum high">{analysis.carbonKg}</span>
+            <span className={`cc-bignum ${getEmissionClass(analysis.emissionsLevel)}`}>{analysis.carbonKg}</span>
             <span className="cc-bignum-unit">kg CO2e</span>
           </div>
-          <div className="cc-progress"><div className="cc-progress-fill high" style={{ width: `${analysis.carbonPercent}%` }} /></div>
+          <div className="cc-progress"><div className={`cc-progress-fill ${getEmissionClass(analysis.emissionsLevel)}`} style={{ width: `${analysis.carbonPercent}%` }} /></div>
           {showAudit && (
             <div className="cc-audit-box" style={{ marginTop: "12px", padding: "12px", background: "rgba(255,255,255,0.08)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.12)" }}>
               <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px" }}>Calculation details</div>
@@ -292,10 +306,10 @@ function AnalysisPanel({
         <div className="cc-card">
           <div className="cc-label">Ethics score</div>
           <div className="cc-bignum-row">
-            <span className="cc-bignum high">{analysis.ethicsScore}</span>
+            <span className={`cc-bignum ${getEthicsClass(analysis.ethicsScore)}`}>{analysis.ethicsScore}</span>
             <span className="cc-bignum-suffix">/100</span>
           </div>
-          <div className="cc-progress"><div className="cc-progress-fill high" style={{ width: `${analysis.ethicsScore}%` }} /></div>
+          <div className="cc-progress"><div className={`cc-progress-fill ${getEthicsClass(analysis.ethicsScore)}`} style={{ width: `${analysis.ethicsScore}%` }} /></div>
           <div className="cc-pill-row">
             {analysis.ethicsTags.map((tag) => <span key={tag} className="cc-pill ghost">{tag}</span>)}
           </div>

@@ -328,6 +328,14 @@
   color: var(--cc-high-fg);
 }
 
+.cc-bignum.med {
+  color: var(--cc-med-fg);
+}
+
+.cc-bignum.low {
+  color: var(--cc-low-fg);
+}
+
 .cc-bignum-unit,
 .cc-bignum-suffix {
   font-size: 14px;
@@ -355,6 +363,14 @@
 
 .cc-progress-fill.high {
   background: var(--cc-high-fg);
+}
+
+.cc-progress-fill.med {
+  background: var(--cc-med-fg);
+}
+
+.cc-progress-fill.low {
+  background: var(--cc-low-fg);
 }
 
 .cc-progress-fill.sage {
