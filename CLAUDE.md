@@ -1,15 +1,15 @@
 # CLAUDE.md
 
-## Backend flow (current)
+## Backend Server Architecture
 
 The backend currently uses a single Express server defined in:
 
 - `backend/server.ts`
 
-Execution flow:
+Use `AGENTS.md` as the canonical backend flow reference for route order and startup sequence.
 
-1. `dotenv.config()` initializes environment values.
-2. `express()` creates the app instance.
-3. `express.json()` middleware is enabled globally.
-4. `GET /` returns `Backend running`.
-5. `app.listen(3000)` starts the server and logs the local URL.
+Claude-specific guardrails:
+
+1. Keep the root health route `GET /` returning `Backend running` unless requirements change.
+2. Preserve JSON middleware registration before adding request handlers.
+3. Keep server bootstrap centered in `backend/server.ts` unless a refactor is requested.
