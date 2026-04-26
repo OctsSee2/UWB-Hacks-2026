@@ -71,6 +71,7 @@ export type Alternative = {
   ethics: string;
   price: string;
   tags: string;
+  url?: string;
 };
 
 export type ImpactStats = {

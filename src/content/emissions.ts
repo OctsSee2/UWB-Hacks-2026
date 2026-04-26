@@ -1,4 +1,4 @@
-import { classifyProductWithAI } from "./ai";
+import { classifyProductWithAI, generateAlternativesWithAI } from "./ai";
 import { getComponentsForCategory } from "./components";
 import { resolveShippingOrigin } from "./location";
 import { getOriginsForComponents } from "./origins";
@@ -287,12 +287,23 @@ function buildDemoAnalysisData(
       ? "description-based components"
       : "category-based components";
 
+  const fallbackAlternatives = [
+    {
+      name: "Eco-friendly alternative",
+      maker: "Local maker",
+      carbon: `${(totalCarbon * 0.5).toFixed(1)} kg CO2e`,
+      ethics: "Ethics 90/100",
+      price: productData.price,
+      tags: "Local - Sustainable",
+    },
+  ];
+
   return {
     productTitle: productData.productName || productData.title,
     carbonKg: totalCarbon.toFixed(1),
     carbonPercent: Math.round(carbonPercent),
     emissionsLevel,
-    alternativesCount: 3,
+    alternativesCount: fallbackAlternatives.length,
     drivingEquivalent: `${Math.max(1, Math.round(totalCarbon * 2))} miles driven`,
     treeGrowthEquivalent: `${Math.max(1, Math.round(totalCarbon / 5))} months tree growth`,
     phoneChargeEquivalent: `${Math.max(1, Math.round(totalCarbon * 2))} phone charges`,
@@ -305,16 +316,7 @@ function buildDemoAnalysisData(
     deliverySpeed: productData.deliveryText || "Standard",
     deliveryIncrease: confidence === "high" ? "+0%" : confidence === "medium" ? "+15%" : "+30%",
     deliveryNote: `Origin estimated from ${emissions.originEstimate.originType}.`,
-    alternatives: [
-      {
-        name: "Eco-friendly alternative",
-        maker: "Local maker",
-        carbon: `${(totalCarbon * 0.5).toFixed(1)} kg CO2e`,
-        ethics: "Ethics 90/100",
-        price: productData.price,
-        tags: "Local - Sustainable",
-      },
-    ],
+    alternatives: fallbackAlternatives,
     auditTrail: [
       {
         title: "Item category",
@@ -392,5 +394,22 @@ export async function calculateProductAnalysis(productData: ProductData, buyerZi
     originEstimate,
     buyerZip
   );
-  return buildDemoAnalysisData(emissions, productData, classification);
+  const analysis = buildDemoAnalysisData(emissions, productData, classification);
+  const alternatives = await generateAlternativesWithAI(productData, {
+    carbonKg: analysis.carbonKg,
+    emissionsLevel: analysis.emissionsLevel,
+    category: classification.category,
+    components: emissions.components,
+  });
+
+  if (!alternatives || alternatives.length === 0) {
+    return analysis;
+  }
+
+  return {
+    ...analysis,
+    alternatives,
+    alternativesCount: alternatives.length,
+    savingsAmount: `${Math.max(0.1, emissions.totalEmissionsKg * 0.35).toFixed(1)} kg CO2`,
+  };
 }

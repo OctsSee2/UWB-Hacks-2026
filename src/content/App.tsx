@@ -31,6 +31,8 @@ type AnalysisPanelProps = {
   active: boolean;
   analysis: DemoAnalysisData;
   productTitle: string;
+  alternativesCount: number;
+  isAnalyzing: boolean;
   onSeeAlternatives: () => void;
   showAudit: boolean;
   onToggleAudit: () => void;
@@ -38,7 +40,11 @@ type AnalysisPanelProps = {
   ethicsScoreClass: EmissionsLevelClass;
 };
 
-type DemoPanelProps = { active: boolean; analysis: DemoAnalysisData };
+type DemoPanelProps = {
+  active: boolean;
+  analysis: DemoAnalysisData;
+  isAnalyzing?: boolean;
+};
 
 type ImpactPanelProps = { active: boolean; analysis: DemoAnalysisData };
 
@@ -52,7 +58,7 @@ type SettingsPanelProps = {
 };
 
 type TabView = Exclude<ViewName, "onboarding">;
-type EmissionsLevelClass = "low" | "medium" | "high";
+type EmissionsLevelClass = "low" | "medium" | "high" | "loading";
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -83,6 +89,41 @@ function getEthicsScoreClass(score: number): EmissionsLevelClass {
 }
 
 // ── CarbonCartApp ────────────────────────────────────────────
+function cleanDisplayBrand(rawBrand: string | undefined): string {
+  return (rawBrand || "")
+    .replace(/^visit\s+the\s+/i, "")
+    .replace(/\s+store$/i, "")
+    .replace(/^brand:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildDisplayProductTitle(rawTitle: string, brand?: string): string {
+  const normalized = rawTitle
+    .replace(/^visit\s+the\s+.+?\s+store\s*/i, "")
+    .replace(/\bvisit\s+the\s+.+?\s+store\b/gi, "")
+    .replace(/\bamazon\.?com\b/gi, "")
+    .replace(/\bamazon\s+fire\s+tv\s+store\b/gi, "")
+    .replace(/\s+/g, " ")
+    .replace(/\((newest model|latest model|with [^)]+)\)/gi, "")
+    .replace(/\b(renewed|amazon choice|prime eligible)\b/gi, "")
+    .trim();
+
+  const beforeFirstComma = normalized.split(",")[0]?.trim() || normalized;
+  const beforeFeaturePhrase = beforeFirstComma
+    .split(/\b(with|featuring|includes)\b/i)[0]
+    ?.trim() || beforeFirstComma;
+
+  const words = beforeFeaturePhrase.split(" ").filter(Boolean);
+  const shortWords = words.slice(0, 6).join(" ");
+  const cleanedBrand = cleanDisplayBrand(brand);
+
+  if (!shortWords) return cleanedBrand || "this product";
+  if (!cleanedBrand) return shortWords;
+
+  const startsWithBrand = shortWords.toLowerCase().startsWith(cleanedBrand.toLowerCase());
+  return startsWithBrand ? shortWords : `${cleanedBrand} ${shortWords}`;
+}
 
 export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const badgeRef = useRef<HTMLButtonElement | null>(null);
@@ -106,11 +147,23 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   );
   const [analysis, setAnalysis] = useState<DemoAnalysisData>(initialAnalysis);
   const [showAudit, setShowAudit] = useState(false);
-  const displayTitle = analysis.productTitle || productTitle;
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  const clickableAlternativesCount = useMemo(
+    () =>
+      isAnalyzing
+        ? 0
+        : analysis.alternatives.filter((alternative) => isLikelyHttpUrl(alternative.url)).length,
+    [analysis.alternatives, isAnalyzing]
+  );
+  const displayTitle = useMemo(
+    () => buildDisplayProductTitle(analysis.productTitle || productTitle, productData.brand),
+    [analysis.productTitle, productTitle, productData.brand]
+  );
   const emissionsLevelClass = getEmissionsLevelClass(analysis.emissionsLevel);
   const ethicsScoreClass = getEthicsScoreClass(analysis.ethicsScore);
 
   useEffect(() => {
+    setIsAnalyzing(true);
     setAnalysis(initialAnalysis);
     setShowAudit(false);
   }, [initialAnalysis]);
@@ -122,10 +175,25 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
 
   useEffect(() => {
     let isActive = true;
+    setIsAnalyzing(true);
+
     calculateProductAnalysis(productData, zip || undefined)
-      .then((next) => { if (isActive) setAnalysis(next); })
-      .catch((err) => { console.error("Product emissions analysis failed:", err); });
-    return () => { isActive = false; };
+      .then((nextAnalysis) => {
+        if (isActive) {
+          setAnalysis(nextAnalysis);
+          setIsAnalyzing(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Product emissions analysis failed:", error);
+        if (isActive) {
+          setIsAnalyzing(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [productData, zip]);
 
   useEffect(() => {
@@ -185,19 +253,21 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   };
 
   const onboardingMode = view === "onboarding";
+  const visibleEmissionsLevel = isAnalyzing ? "Analyzing" : analysis.emissionsLevel;
+  const visibleEmissionsLevelClass = isAnalyzing ? "loading" : emissionsLevelClass;
 
   return (
     <>
       <button ref={badgeRef} className="cc-float-badge" aria-label="Open CarbonCart" onClick={togglePopup}>
-        <div className={`cc-float-circle ${emissionsLevelClass}`}>
+        <div className={`cc-float-circle ${visibleEmissionsLevelClass}`}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "15px", lineHeight: 1 }}>{analysis.carbonKg}</div>
-            <div style={{ fontSize: "9px", fontWeight: 500, opacity: 0.9 }}>kg</div>
+            <div style={{ fontSize: "15px", lineHeight: 1 }}>{isAnalyzing ? "..." : analysis.carbonKg}</div>
+            <div style={{ fontSize: "9px", fontWeight: 500, opacity: 0.9 }}>{isAnalyzing ? "" : "kg"}</div>
           </div>
         </div>
         <div className="cc-float-mid">
-          <div className="cc-float-label">{analysis.emissionsLevel}</div>
-          <div className="cc-float-alt"><IconLeaf size={11} /> {analysis.alternativesCount} alternatives</div>
+          <div className="cc-float-label">{visibleEmissionsLevel}</div>
+          <div className="cc-float-alt"><IconLeaf size={11} /> {isAnalyzing ? "Collecting data" : `${clickableAlternativesCount} alternatives`}</div>
         </div>
       </button>
 
@@ -206,8 +276,8 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
         <div className={`cc-popup ${onboardingMode ? "cc-onboarding-mode" : ""}`}>
           <Header
             onClose={() => setOpen(false)}
-            emissionsLevel={analysis.emissionsLevel}
-            emissionsLevelClass={emissionsLevelClass}
+            emissionsLevel={visibleEmissionsLevel}
+            emissionsLevelClass={visibleEmissionsLevelClass}
           />
           <Tabs view={view} onChange={setPanelView} />
           <OnboardingPanel active={view === "onboarding"} onComplete={completeOnboarding} />
@@ -215,13 +285,15 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
             active={view === "analysis"}
             analysis={analysis}
             productTitle={displayTitle}
+            alternativesCount={clickableAlternativesCount}
+            isAnalyzing={isAnalyzing}
             onSeeAlternatives={() => setPanelView("alternatives")}
             showAudit={showAudit}
             onToggleAudit={() => setShowAudit((c) => !c)}
             emissionsLevelClass={emissionsLevelClass}
             ethicsScoreClass={ethicsScoreClass}
           />
-          <AlternativesPanel active={view === "alternatives"} analysis={analysis} />
+          <AlternativesPanel active={view === "alternatives"} analysis={analysis} isAnalyzing={isAnalyzing} />
           <ImpactPanel active={view === "impact"} analysis={analysis} />
           <SettingsPanel
             active={view === "settings"}
@@ -361,10 +433,43 @@ function OnboardingPanel({ active, onComplete }: OnboardingPanelProps) {
 
 // ── AnalysisPanel ────────────────────────────────────────────
 
+function isLikelyHttpUrl(value: string | undefined): boolean {
+  return Boolean(value && /^https?:\/\//i.test(value));
+}
+
 function AnalysisPanel({
-  active, analysis, productTitle, onSeeAlternatives,
-  showAudit, onToggleAudit, emissionsLevelClass, ethicsScoreClass,
+  active,
+  analysis,
+  productTitle,
+  alternativesCount,
+  isAnalyzing,
+  onSeeAlternatives,
+  showAudit,
+  onToggleAudit,
+  emissionsLevelClass,
+  ethicsScoreClass,
 }: AnalysisPanelProps) {
+  if (isAnalyzing) {
+    return (
+      <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="analysis">
+        <div className="cc-product-strip">
+          <div>Analyzing: <strong>{productTitle}</strong></div>
+          <div className="cc-est">Collecting product data and calculating emissions...</div>
+        </div>
+
+        <div className="cc-body">
+          <div className="cc-card cc-loading-card">
+            <div className="cc-label">Analysis in progress</div>
+            <div className="cc-loading-row">
+              <span className="cc-loading-dot" />
+              <span>Checking category, components, shipping, and greener alternatives.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="analysis">
       <div className="cc-product-strip">
@@ -443,8 +548,8 @@ function AnalysisPanel({
           </div>
         </div>
 
-        <button className="cc-cta" onClick={onSeeAlternatives}>
-          See {analysis.alternativesCount} greener alternatives <IconArrow size={14} />
+        <button className="cc-cta js-see-alternatives" onClick={onSeeAlternatives}>
+          See {alternativesCount} greener alternatives <IconArrow size={14} />
         </button>
       </div>
     </div>
@@ -453,27 +558,50 @@ function AnalysisPanel({
 
 // ── AlternativesPanel ────────────────────────────────────────
 
-function AlternativesPanel({ active, analysis }: DemoPanelProps) {
+function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelProps) {
+  const clickableAlternatives = analysis.alternatives.filter((alternative) =>
+    isLikelyHttpUrl(alternative.url)
+  );
+
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="alternatives">
       <div className="cc-body">
         <div className="cc-cap" style={{ padding: "4px 2px 0" }}>Greener choices near you</div>
+        <div className="cc-verify-note">
+          Showing only alternatives with direct listing links.
+        </div>
 
-        {analysis.alternatives.map((alt) => (
-          <div className="cc-alt" key={alt.name}>
+        {isAnalyzing ? (
+          <div className="cc-verify-missing">Alternatives are still loading.</div>
+        ) : null}
+
+        {!isAnalyzing && clickableAlternatives.length === 0 ? (
+          <div className="cc-verify-missing">No linked alternatives available for this product yet.</div>
+        ) : null}
+
+        {!isAnalyzing && clickableAlternatives.map((alternative) => (
+          <div className="cc-alt" key={alternative.name}>
             <div className="cc-alt-top">
               <div className="cc-alt-thumb"><IconLogo size={20} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="cc-alt-name">{alt.name}</div>
-                <div className="cc-alt-maker">{alt.maker}</div>
+                <div className="cc-alt-name">{alternative.name}</div>
+                <div className="cc-alt-maker">{alternative.maker}</div>
               </div>
             </div>
             <div className="cc-alt-data">
-              <span className="cc-pill sage">{alt.carbon}</span>
-              <span className="cc-pill sage">{alt.ethics}</span>
-              <span className="cc-pill ghost">{alt.price}</span>
+              <span className="cc-pill sage">{alternative.carbon}</span>
+              <span className="cc-pill sage">{alternative.ethics}</span>
+              <span className="cc-pill ghost">{alternative.price}</span>
             </div>
-            <div className="cc-alt-tags">{alt.tags}</div>
+            <div className="cc-alt-tags">{alternative.tags}</div>
+            <a
+              className="cc-verify-link"
+              href={alternative.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open product
+            </a>
           </div>
         ))}
 
