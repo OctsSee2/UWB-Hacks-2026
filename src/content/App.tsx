@@ -46,7 +46,7 @@ type DemoPanelProps = {
   isAnalyzing?: boolean;
 };
 
-type ImpactPanelProps = { active: boolean; analysis: DemoAnalysisData };
+type ImpactPanelProps = { active: boolean; analysis: DemoAnalysisData; totalCO2Saved: number; goalKg: number };
 
 type SettingsPanelProps = {
   active: boolean;
@@ -294,7 +294,7 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
             ethicsScoreClass={ethicsScoreClass}
           />
           <AlternativesPanel active={view === "alternatives"} analysis={analysis} isAnalyzing={isAnalyzing} />
-          <ImpactPanel active={view === "impact"} analysis={analysis} />
+          <ImpactPanel active={view === "impact"} analysis={analysis} totalCO2Saved={totalCO2Saved} goalKg={goalKg} />
           <SettingsPanel
             active={view === "settings"}
             zip={zip}
@@ -618,28 +618,38 @@ function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelP
 
 // ── ImpactPanel ──────────────────────────────────────────────
 
-function ImpactPanel({ active, analysis }: ImpactPanelProps) {
-  const impact = analysis.impact;
+function ImpactPanel({ active, totalCO2Saved, goalKg }: ImpactPanelProps) {
+  const KG_CO2_PER_MILE = 0.404;
+  const KG_CO2_PER_TREE_MONTH = 21.8 / 12;
+
+  const effectiveGoal = goalKg || 100;
+  const progress = Math.min(100, Math.round((totalCO2Saved / effectiveGoal) * 100));
+  const milesNotDriven = Math.round(totalCO2Saved / KG_CO2_PER_MILE).toString();
+  const treesWorth = (totalCO2Saved / KG_CO2_PER_TREE_MONTH).toFixed(1);
+  const purchasesSwitched = Math.max(0, Math.round(totalCO2Saved / 5)).toString();
+
+  const progressClass = progress >= 66 ? "low" : progress >= 33 ? "medium" : "high";
+  const progressColor = progress >= 66 ? "var(--cc-low-fg)" : progress >= 33 ? "var(--cc-med-fg)" : "var(--cc-high-fg)";
+
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="impact">
       <div className="cc-body">
         <div className="cc-hero-saved">
           <div className="cc-label" style={{ marginBottom: "6px" }}>You've saved</div>
-          <div className="cc-big">{impact.savedKg}<span className="cc-big-unit">kg CO2</span></div>
+          <div className="cc-big" style={{ color: progressColor }}>{totalCO2Saved.toFixed(1)}<span className="cc-big-unit">kg CO2</span></div>
           <div className="cc-milestone-row">
-            <span>{impact.nextMilestone}</span>
-            <span style={{ color: "var(--cc-sage)", fontWeight: 600 }}>{impact.progress}%</span>
+            <span>{totalCO2Saved.toFixed(0)} of {effectiveGoal} kg goal</span>
+            <span style={{ color: progressColor, fontWeight: 600 }}>{progress}%</span>
           </div>
           <div className="cc-progress cc-progress--thin">
-            <div className="cc-progress-fill sage" style={{ width: `${impact.progress}%` }} />
+            <div className={`cc-progress-fill ${progressClass}`} style={{ width: `${progress}%` }} />
           </div>
         </div>
 
         <div className="cc-grid-2x3">
-          <div className="cc-stat"><div className="cc-stat-num">{impact.milesNotDriven}</div><div className="cc-stat-label">miles not driven</div></div>
-          <div className="cc-stat"><div className="cc-stat-num">{impact.dayStreak}</div><div className="cc-stat-label">day streak</div></div>
-          <div className="cc-stat"><div className="cc-stat-num">{impact.treesWorth}</div><div className="cc-stat-label">trees' worth</div></div>
-          <div className="cc-stat"><div className="cc-stat-num">{impact.purchasesSwitched}</div><div className="cc-stat-label">purchases switched</div></div>
+          <div className="cc-stat"><div className="cc-stat-num">{milesNotDriven}</div><div className="cc-stat-label">miles not driven</div></div>
+          <div className="cc-stat"><div className="cc-stat-num">{treesWorth}</div><div className="cc-stat-label">tree-months absorbed</div></div>
+          <div className="cc-stat"><div className="cc-stat-num">{purchasesSwitched}</div><div className="cc-stat-label">purchases switched</div></div>
         </div>
 
       </div>
