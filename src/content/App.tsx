@@ -539,11 +539,11 @@ function AnalysisPanel({
         <div className="cc-delivery">
           <div className="cc-delivery-icon"><IconBolt size={20} /></div>
           <div style={{ flex: 1 }}>
-            <div className="cc-delivery-head">Delivery speed adds emissions</div>
+            <div className="cc-delivery-head">Shipping estimate</div>
             <div className="cc-delivery-body">{analysis.deliveryNote}</div>
             <div className="cc-compare">
-              <span className="cc-pill red">{analysis.deliverySpeed}: {analysis.deliveryIncrease}</span>
-              <span className="cc-pill sage">Standard: baseline</span>
+              <span className="cc-pill ghost">{analysis.deliverySpeed}</span>
+              <span className="cc-pill sage">{analysis.deliveryIncrease}</span>
             </div>
           </div>
         </div>
@@ -605,10 +605,12 @@ function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelP
           </div>
         ))}
 
-        <div className="cc-save-banner">
-          <div className="cc-save-banner-icon"><IconCheck size={12} /></div>
-          <div>{analysis.savingsText}<strong>{analysis.savingsAmount}</strong>{analysis.savingsComparison}</div>
-        </div>
+        {analysis.savingsAmount ? (
+          <div className="cc-save-banner">
+            <div className="cc-save-banner-icon"><IconCheck size={12} /></div>
+            <div>{analysis.savingsText}<strong>{analysis.savingsAmount}</strong>{analysis.savingsComparison}</div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
