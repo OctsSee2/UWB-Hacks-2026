@@ -16,30 +16,35 @@ An ethical shopping assistant that helps online consumers make informed purchasi
 Frontend detects product
         │
         ▼
-Webpage Scraper → ScrapedData
+Webpage Scraper → ScrapedData          ┐
+        │                              │  Each step that queries an API,
+        ▼                              │  does math, or uses AI reasoning
+Barcode IDs Anchor Table               │  compiles a CalculationData object
+  ──→  fill missing fields             │
+        │                              │
+        ▼                              │
+DB Anchor Table                        │
+  ──→  query external APIs             │
+        │                              │
+        ▼                              │
+Build RawDataInferences object         ┘
         │
-        ▼
-Barcode IDs Anchor Table  ──→  fill missing fields from ScrapedData
-        │
-        ▼
-DB Anchor Table  ──→  query external APIs for remaining fields
-        │
-        ▼
-AI inference layer  ──→  RawDataInference → AIInterpretedInference
-        │
-        ▼
-Push Inferences to frontend
+        ├──→ Push RawDataInferences to frontend
+        └──→ Push CalculationData (AuditTrail) to frontend
 ```
 
 See `backend_flow.txt` for the detailed control-flow spec.
 
 ## Key concepts
 
-- **Broad product categories** — high-level buckets like Clothing, Electronics. See `product_types.txt` and `types/product_types.ts` (`ProductType` enum).
+- **Broad product categories** — high-level buckets like Tables, Bananas, Gaming PCs, Lip Gloss, Blenders, Shelves, TVs. See `product_types.txt` and `types/product_types.ts` (`ProductType` enum).
 - **ScrapedData** — raw fields extracted from the product webpage (title, components, features, weight, reviews, origin).
-- **RawDataInference** — enriched data object after API queries (company reputation, country of origin, and more fields planned).
+- **RawDataInference** — enriched data object after API queries (company reputation, country of origin, functionality, price, ingredients, reviews, healthiness, FDA info, recalls, shipping, carbon footprint, ethics rating).
+- **CalculationData** — documents every step and source used to derive a single inference entry; an array of these forms the AuditTrail.
+- **CalculationStep** — a single action performed during a calculation, described in plain English.
+- **CalculationSource** — a linkable source (URL, API, etc.) used during a calculation.
+- **AuditTrail** — array of `CalculationData` objects in reverse chronological order; pushed to frontend alongside `RawDataInferences`.
 - **AIInterpretedInference** — AI-generated layer on top of raw data; interface is currently a placeholder.
-- **Inferences** — the full output object delivered to the frontend, combining raw and AI-interpreted data.
 
 ## TypeScript data model (`types/`)
 
@@ -56,6 +61,10 @@ See `backend_flow.txt` for the detailed control-flow spec.
 | `weight_unit.ts` | `WeightUnit` (type) | `"gram" \| "pound" \| "ton" \| "kilogram"` |
 | `country.ts` | `Country` (type) | ISO 3166-1 alpha-2 union |
 | `misc_origin.ts` | `MiscOrigin` (type) | `"imported"` fallback |
+| `calculation_data.ts` | `CalculationData` (interface) — planned | Steps + sources for one inference entry |
+| `calculation_step.ts` | `CalculationStep` (interface) — planned | Single action described in English |
+| `calculation_source.ts` | `CalculationSource` (interface) — planned | Linkable source (URL, API, etc.) |
+| `audit_trail.ts` | `AuditTrail` (type) — planned | `CalculationData[]` in reverse-chron order |
 
 See `AGENTS.md` for field-level documentation of each type.
 
