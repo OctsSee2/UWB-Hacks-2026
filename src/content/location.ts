@@ -5,10 +5,10 @@ const DEFAULT_COORDINATES = { latitude: 39.8283, longitude: -98.5795 };
 const NOMINATIM_BASE = "https://nominatim.openstreetmap.org/search";
 const ZIPPOTAMPO_BASE = "https://api.zippopotam.us/us";
 
-const retailerFallbacks: Record<string, { origin: string; latitude: number; longitude: number }> = {
-  "amazon.com": { origin: "Amazon logistics hub, Seattle, WA", latitude: 47.6062, longitude: -122.3321 },
-  "target.com": { origin: "Target distribution center, Minneapolis, MN", latitude: 44.9778, longitude: -93.2650 },
-  "walmart.com": { origin: "Walmart headquarters, Bentonville, AR", latitude: 36.3729, longitude: -94.2088 },
+const retailerFallbacks: Record<string, { origin: string; country: string }> = {
+  "amazon.com": { origin: "Amazon fulfillment network", country: "USA" },
+  "target.com": { origin: "Target fulfillment network", country: "USA" },
+  "walmart.com": { origin: "Walmart fulfillment network", country: "USA" },
 };
 
 const stateCoordinates: Record<string, { latitude: number; longitude: number }> = {
@@ -201,11 +201,11 @@ function getRetailerFallback(domain: string): OriginEstimate {
   return buildEstimate(
     fallback.origin,
     "retailer",
-    "low",
-    fallback.latitude,
-    fallback.longitude,
+    "very low",
+    DEFAULT_COORDINATES.latitude,
+    DEFAULT_COORDINATES.longitude,
     undefined,
-    "USA"
+    fallback.country
   );
 }
 
@@ -213,6 +213,18 @@ function getCountryFallback(country: string): OriginEstimate {
   const key = country.trim().toLowerCase();
   const coords = countryCoordinates[key] ?? DEFAULT_COORDINATES;
   return buildEstimate(country, "country", "very low", coords.latitude, coords.longitude, undefined, country);
+}
+
+function normalizeUsableCountry(country: string | null | undefined): string | null {
+  const normalized = country?.trim();
+  if (!normalized) return null;
+
+  const key = normalized.toLowerCase();
+  if (["none", "unknown", "n/a", "na", "not available", "unavailable"].includes(key)) {
+    return null;
+  }
+
+  return normalized;
 }
 
 export async function resolveShippingOrigin(
@@ -270,10 +282,11 @@ export async function resolveShippingOrigin(
     return getRetailerFallback(product.retailer);
   }
 
-  const fallbackCountry = product.country || getMostLikelyComponentCountry(componentOrigins);
+  const fallbackCountry = normalizeUsableCountry(product.country) ||
+    normalizeUsableCountry(getMostLikelyComponentCountry(componentOrigins));
   if (fallbackCountry) {
     return getCountryFallback(fallbackCountry);
   }
 
-  return buildEstimate("United States", "retailer", "low", DEFAULT_COORDINATES.latitude, DEFAULT_COORDINATES.longitude, undefined, "USA");
+  return buildEstimate("Fulfillment network", "retailer", "very low", DEFAULT_COORDINATES.latitude, DEFAULT_COORDINATES.longitude, undefined, "USA");
 }

@@ -22,6 +22,9 @@ export const componentOriginMap: Record<string, string[]> = {
   plastic: ["China", "USA"],
   motor: ["China", "Germany"],
   electronics: ["China", "Taiwan"],
+  food: ["USA", "Mexico"],
+  produce: ["USA", "Mexico"],
+  farming: ["USA", "Mexico"],
 };
 
 export function getOriginsForComponents(components: string[]): Record<string, string[]> {

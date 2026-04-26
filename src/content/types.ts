@@ -55,6 +55,8 @@ export type EmissionsResult = {
   emissionFactor: number;
   productionEmissionsKg: number;
   shippingEmissionsKg: number;
+  usePhaseEmissionsKg: number;
+  usePhaseDescription?: string;
   totalEmissionsKg: number;
 };
 
@@ -71,6 +73,9 @@ export type Alternative = {
   ethics: string;
   price: string;
   tags: string;
+  searchQuery?: string;
+  marketplace?: string;
+  linkType?: "listing" | "search";
   url?: string;
 };
 

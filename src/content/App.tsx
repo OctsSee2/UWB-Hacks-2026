@@ -572,7 +572,7 @@ function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelP
       <div className="cc-body">
         <div className="cc-cap" style={{ padding: "4px 2px 0" }}>Greener choices near you</div>
         <div className="cc-verify-note">
-          Showing only alternatives with direct listing links.
+          Shopping results powered by SerpApi when available. Verify listings before buying.
         </div>
 
         {isAnalyzing ? (
@@ -580,7 +580,7 @@ function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelP
         ) : null}
 
         {!isAnalyzing && clickableAlternatives.length === 0 ? (
-          <div className="cc-verify-missing">No linked alternatives available for this product yet.</div>
+          <div className="cc-verify-missing">No marketplace searches available for this product yet.</div>
         ) : null}
 
         {!isAnalyzing && clickableAlternatives.map((alternative) => (
@@ -589,7 +589,13 @@ function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelP
               <div className="cc-alt-thumb"><IconLogo size={20} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="cc-alt-name">{alternative.name}</div>
-                <div className="cc-alt-maker">{alternative.maker}</div>
+                <div className="cc-alt-maker">
+                  {alternative.linkType === "listing"
+                    ? alternative.maker
+                    : alternative.marketplace
+                      ? `${alternative.marketplace} search`
+                      : alternative.maker}
+                </div>
               </div>
             </div>
             <div className="cc-alt-data">
@@ -604,7 +610,7 @@ function AlternativesPanel({ active, analysis, isAnalyzing = false }: DemoPanelP
               target="_blank"
               rel="noopener noreferrer"
             >
-              Open product
+              {alternative.linkType === "listing" ? "View listing" : "Search listings"}
             </a>
           </div>
         ))}

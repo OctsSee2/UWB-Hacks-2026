@@ -13,11 +13,18 @@ import type {
 const DEFAULT_BUYER_ZIP = "98011";
 const SHIPPING_EMISSION_FACTOR = 0.1; // kg CO2 per ton-mile
 const DEFAULT_WEIGHT_KG = 1;
+const DEFAULT_BANANA_WEIGHT_KG = 0.18;
+const DEFAULT_SINGLE_PRODUCE_WEIGHT_KG = 0.25;
+const DEFAULT_CHARCOAL_BAG_WEIGHT_KG = 7.3;
 const DEFAULT_DISTANCE_MILES = 1000;
+const DOMESTIC_FALLBACK_DISTANCE_MILES = 600;
 const UNKNOWN_CATEGORY = "unknown";
 const KG_CO2_PER_MILE_DRIVEN = 0.404;
 const KG_CO2_PER_PHONE_CHARGE = 0.008;
 const KG_CO2_ABSORBED_PER_TREE_MONTH = 21.8 / 12;
+const KG_CO2_PER_KG_CHARCOAL_BURNED = 3.0;
+const PACKAGED_FOOD_COMPONENTS = ["food", "farming", "packaging"];
+const PRODUCE_COMPONENTS = ["produce", "farming", "packaging"];
 
 type ClassificationContext = {
   category: string;
@@ -46,10 +53,17 @@ function shouldUseAIClassification(category: string, components: string[]): bool
 }
 
 function getClassificationFromScraper(product: ScrapedProduct): ClassificationContext {
-  const category = normalizeCategory(product.category);
+  const scrapedCategory = normalizeCategory(product.category);
+  const listingText = getListingText(product);
+  const category = isCombustibleFuelProduct(listingText)
+    ? "combustible fuel"
+    : isFoodProduct(product, scrapedCategory)
+      ? "packaged food"
+      : scrapedCategory;
+  const productComponents = inferComponentsFromProduct(product, category);
   const components = hasComponents(product.components)
     ? product.components
-    : getComponentsForCategory(category);
+    : productComponents ?? getComponentsForCategory(category);
 
   return {
     category,
@@ -87,7 +101,25 @@ function getEstimatedWeight(product: ScrapedProduct, category: string): number {
     return product.weightKg;
   }
 
+  const parsedWeight = parsePackageWeightKg(product);
+  if (parsedWeight) {
+    return parsedWeight;
+  }
+
   const normalized = category.toLowerCase();
+  const listingText = getListingText(product);
+  if (isCharcoalProduct(listingText)) {
+    return DEFAULT_CHARCOAL_BAG_WEIGHT_KG;
+  }
+  if (isBananaProduct(listingText)) {
+    return DEFAULT_BANANA_WEIGHT_KG;
+  }
+  if (isProduceProduct(listingText, normalized)) {
+    return DEFAULT_SINGLE_PRODUCE_WEIGHT_KG;
+  }
+  if (isFoodProduct(product, normalized)) {
+    return 0.45;
+  }
   if (normalized.includes("laptop") || normalized.includes("tablet") || normalized.includes("phone")) {
     return 1.8;
   }
@@ -102,6 +134,83 @@ function getEstimatedWeight(product: ScrapedProduct, category: string): number {
   }
 
   return DEFAULT_WEIGHT_KG;
+}
+
+function parsePackageWeightKg(product: ScrapedProduct): number | null {
+  const text = getListingText(product);
+  const weightMatch = text.match(/(\d+(?:\.\d+)?)\s*(lb|lbs|pound|pounds|kg|kilogram|kilograms|oz|ounce|ounces)\b/i);
+  if (!weightMatch?.[1] || !weightMatch[2]) return null;
+
+  const amount = Number(weightMatch[1]);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const unit = weightMatch[2].toLowerCase();
+  if (unit === "kg" || unit.startsWith("kilogram")) return amount;
+  if (unit === "oz" || unit.startsWith("ounce")) return amount * 0.0283495;
+  return amount * 0.453592;
+}
+
+function isCharcoalProduct(text: string): boolean {
+  return /\b(charcoal|briquette|briquettes|lump coal|bbq coal|grilling coal)\b/.test(text);
+}
+
+function isCombustibleFuelProduct(text: string): boolean {
+  return isCharcoalProduct(text) || /\b(propane|butane|lighter fluid|fire starter|firestarter|grill fuel|camp fuel)\b/.test(text);
+}
+
+function isBananaProduct(text: string): boolean {
+  return /\bbanana|bananas\b/.test(text);
+}
+
+function isProduceProduct(text: string, category: string): boolean {
+  return /\b(fresh fruit|fresh fruits|produce|grocery|banana|apple|orange|lemon|lime|avocado|berries|strawberry|grapes|vegetable|vegetables)\b/.test(`${text} ${category}`);
+}
+
+function isFoodProduct(product: ScrapedProduct, category: string): boolean {
+  const text = getListingText(product);
+  if (isCombustibleFuelProduct(`${text} ${category}`)) {
+    return false;
+  }
+
+  const hasIngredients = Boolean(product.ingredients?.trim());
+  const foodSignals = /\b(food|grocery|snack|snacks|breakfast|cereal|poptart|pop-tart|pop tarts|cookie|cookies|cracker|crackers|chips|candy|chocolate|granola|protein bar|nutrition bar|pastry|pastries|fruit|produce|beverage|coffee|tea|soda|juice|sauce|pasta|rice|noodle|soup|spice|seasoning)\b/.test(`${text} ${category}`);
+  const cosmeticSignals = /\b(beauty|skin care|skincare|cosmetic|makeup|shampoo|conditioner|lotion|serum|fragrance|deodorant)\b/.test(`${text} ${category}`);
+
+  return foodSignals || (hasIngredients && !cosmeticSignals);
+}
+
+function estimateUsePhaseEmissions(
+  product: ScrapedProduct,
+  weightKg: number
+): { emissionsKg: number; description?: string } {
+  const text = getListingText(product);
+  if (!isCharcoalProduct(text)) {
+    return { emissionsKg: 0 };
+  }
+
+  const fuelWeightKg = product.weightKg || parsePackageWeightKg(product) || weightKg || DEFAULT_CHARCOAL_BAG_WEIGHT_KG;
+  const emissionsKg = fuelWeightKg * KG_CO2_PER_KG_CHARCOAL_BURNED;
+  const weightSource = product.weightKg || parsePackageWeightKg(product)
+    ? "listing/package weight"
+    : "default charcoal bag weight";
+
+  return {
+    emissionsKg,
+    description: `Adds expected CO2 from burning charcoal: ${fuelWeightKg.toFixed(1)} kg fuel x ${KG_CO2_PER_KG_CHARCOAL_BURNED.toFixed(1)} kg CO2/kg (${weightSource}).`,
+  };
+}
+
+function inferComponentsFromProduct(product: ScrapedProduct, category: string): string[] | null {
+  const listingText = getListingText(product);
+
+  if (isProduceProduct(listingText, category)) {
+    return PRODUCE_COMPONENTS;
+  }
+  if (isFoodProduct(product, category)) {
+    return PACKAGED_FOOD_COMPONENTS;
+  }
+
+  return null;
 }
 
 function haversineDistance(
@@ -162,6 +271,9 @@ function estimateProductionEmissions(
     plastic: 3,
     motor: 10,
     electronics: 9,
+    food: 1.2,
+    produce: 0.35,
+    farming: 0.45,
   };
 
   return components.reduce((total, component) => {
@@ -183,6 +295,10 @@ function estimateDistance(
   originEstimate: EmissionsResult["originEstimate"],
   buyerZip: string
 ): number {
+  if (originEstimate.confidence === "very low") {
+    return DOMESTIC_FALLBACK_DISTANCE_MILES;
+  }
+
   const buyer = getBuyerCoordinates(buyerZip);
   if (!originEstimate.latitude || !originEstimate.longitude) {
     return DEFAULT_DISTANCE_MILES;
@@ -225,7 +341,8 @@ function buildEmissionsResultWithOrigin(
     classification.components,
     componentOrigins
   );
-  const totalEmissionsKg = productionEmissionsKg + shippingEmissionsKg;
+  const usePhase = estimateUsePhaseEmissions(product, weightKg);
+  const totalEmissionsKg = productionEmissionsKg + shippingEmissionsKg + usePhase.emissionsKg;
 
   return {
     components: classification.components,
@@ -236,6 +353,8 @@ function buildEmissionsResultWithOrigin(
     emissionFactor: SHIPPING_EMISSION_FACTOR,
     productionEmissionsKg,
     shippingEmissionsKg,
+    usePhaseEmissionsKg: usePhase.emissionsKg,
+    usePhaseDescription: usePhase.description,
     totalEmissionsKg,
   };
 }
@@ -270,17 +389,6 @@ function formatEmissionValue(value: number): string {
   return `${value.toFixed(2)} kg CO2e`;
 }
 
-function compactText(value: string, maxLength = 64): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length <= maxLength) return normalized;
-  return `${normalized.slice(0, maxLength - 3).trim()}...`;
-}
-
-function getShippingBasis(productData: ProductData): string {
-  const deliveryText = compactText(productData.deliveryText || productData.shipping || "");
-  return deliveryText || "Shipping details unavailable";
-}
-
 function formatConfidenceLabel(confidence: OriginEstimate["confidence"]): string {
   switch (confidence) {
     case "high":
@@ -298,11 +406,19 @@ function buildShippingEstimateNote(emissions: EmissionsResult): string {
   const distance = Math.max(0, Math.round(emissions.distanceMiles));
   const originType = emissions.originEstimate.originType;
 
+  if (emissions.originEstimate.confidence === "very low") {
+    return `No fulfillment origin was found, so shipping uses a conservative ${distance} mile fulfillment-network fallback.`;
+  }
+
   if (emissions.originEstimate.confidence === "high") {
     return `Shipping impact uses a ${originType} clue and an estimated ${distance} mile route.`;
   }
 
   return `Exact fulfillment origin was unavailable, so shipping impact uses a ${originType} estimate over about ${distance} miles.`;
+}
+
+function buildShippingImpactLabel(emissions: EmissionsResult): string {
+  return `Shipping: ${formatEmissionValue(emissions.shippingEmissionsKg)}`;
 }
 
 function parseCarbonKg(value: string): number | null {
@@ -399,6 +515,9 @@ function getCategoryRisk(category: string): { adjustment: number; label: string 
   if (/(toy|beauty)/.test(normalized)) {
     return { adjustment: -4, label: "Moderate category risk" };
   }
+  if (/(combustible fuel|fuel|charcoal|propane|butane)/.test(normalized)) {
+    return { adjustment: -18, label: "Combustible fuel" };
+  }
   if (/(furniture|appliance)/.test(normalized)) {
     return { adjustment: -3, label: "Durability matters" };
   }
@@ -475,8 +594,23 @@ function getListingSignalAssessment(text: string): { adjustment: number; labels:
     adjustment -= 10;
     labels.push("Disposable signal");
   }
+  if (isCombustibleFuelProduct(text)) {
+    adjustment -= 35;
+    labels.push("Combustion/use emissions");
+  }
 
   return { adjustment, labels };
+}
+
+function getEthicsScoreCap(text: string): { cap: number; reason?: string } {
+  if (isCharcoalProduct(text)) {
+    return { cap: 20, reason: "combustible charcoal cap 20" };
+  }
+  if (isCombustibleFuelProduct(text)) {
+    return { cap: 15, reason: "combustible fuel cap 15" };
+  }
+
+  return { cap: 100 };
 }
 
 function buildEthicsAssessment(
@@ -492,7 +626,8 @@ function buildEthicsAssessment(
   const componentCountryCount = new Set(Object.values(emissions.componentOrigins).flat()).size;
   const traceabilityAdjustment = classification.usedAI ? -5 : 0;
   const multiCountryAdjustment = componentCountryCount > 3 ? -4 : 0;
-  const score = clampScore(
+  const scoreCap = getEthicsScoreCap(listingText);
+  const rawScore = clampScore(
     60 +
       origin.adjustment +
       category.adjustment +
@@ -501,6 +636,7 @@ function buildEthicsAssessment(
       traceabilityAdjustment +
       multiCountryAdjustment
   );
+  const score = Math.min(rawScore, scoreCap.cap);
   const confidenceLabel =
     emissions.originEstimate.confidence === "high"
       ? "High confidence"
@@ -521,6 +657,7 @@ function buildEthicsAssessment(
     `listing signals ${listingSignals.adjustment >= 0 ? "+" : ""}${listingSignals.adjustment}`,
     traceabilityAdjustment ? `AI inference ${traceabilityAdjustment}` : "",
     multiCountryAdjustment ? `multi-country components ${multiCountryAdjustment}` : "",
+    scoreCap.reason ? scoreCap.reason : "",
   ].filter(Boolean).join("; ");
 
   return {
@@ -556,7 +693,19 @@ function buildDemoAnalysisData(
     : hasScrapedComponents
       ? "description-based components"
       : "category-based components";
+  const sourceParts = [
+    `Estimated from ${sourceBasis}`,
+    emissions.usePhaseEmissionsKg > 0 ? "combustion/use-phase impact" : "",
+    `${confidence} origin inference`,
+  ].filter(Boolean);
   const ethics = buildEthicsAssessment(emissions, productData, classification);
+  const usePhaseAuditEntry = emissions.usePhaseEmissionsKg > 0
+    ? [{
+        title: "Use-phase emissions",
+        value: `${emissions.usePhaseEmissionsKg.toFixed(1)} kg CO2e`,
+        description: emissions.usePhaseDescription || "Estimated from expected emissions during product use.",
+      }]
+    : [];
 
   return {
     productTitle: productData.productName || productData.title,
@@ -567,10 +716,10 @@ function buildDemoAnalysisData(
     drivingEquivalent: equivalencies.drivingEquivalent,
     treeGrowthEquivalent: equivalencies.treeGrowthEquivalent,
     phoneChargeEquivalent: equivalencies.phoneChargeEquivalent,
-    source: `Estimated from ${sourceBasis}, plus ${confidence} origin inference`,
+    source: sourceParts.join(", plus "),
     ethicsScore: ethics.score,
     ethicsTags: ethics.tags,
-    deliverySpeed: getShippingBasis(productData),
+    deliverySpeed: buildShippingImpactLabel(emissions),
     deliveryIncrease: formatConfidenceLabel(confidence),
     deliveryNote: buildShippingEstimateNote(emissions),
     alternatives: [],
@@ -600,7 +749,9 @@ function buildDemoAnalysisData(
       {
         title: "Distance estimate",
         value: `${emissions.distanceMiles.toFixed(0)} miles`,
-        description: "Calculated from origin and buyer coordinates.",
+        description: emissions.originEstimate.confidence === "very low"
+          ? "No fulfillment origin found; using a conservative fulfillment-network fallback."
+          : "Calculated from origin and buyer coordinates.",
       },
       {
         title: "Production emissions",
@@ -612,6 +763,7 @@ function buildDemoAnalysisData(
         value: formatEmissionValue(emissions.shippingEmissionsKg),
         description: "Calculated as distance x weight x shipping factor.",
       },
+      ...usePhaseAuditEntry,
       {
         title: "Equivalencies",
         value: `${equivalencies.drivingEquivalent}, ${equivalencies.phoneChargeEquivalent}`,
@@ -654,6 +806,7 @@ export async function calculateProductAnalysis(productData: ProductData, buyerZi
   const alternatives = await generateAlternativesWithAI(productData, {
     carbonKg: analysis.carbonKg,
     emissionsLevel: analysis.emissionsLevel,
+    ethicsScore: analysis.ethicsScore,
     category: classification.category,
     components: emissions.components,
   });

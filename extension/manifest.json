@@ -4,7 +4,14 @@
   "version": "1.0",
   "description": "Shows estimated product emissions while shopping online.",
   "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://*/*", "http://localhost:3000/*"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://www.amazon.com/*",
+    "https://www.target.com/*",
+    "https://www.walmart.com/*",
+    "https://api.zippopotam.us/*",
+    "https://nominatim.openstreetmap.org/*"
+  ],
   "content_scripts": [
     {
       "matches": [
