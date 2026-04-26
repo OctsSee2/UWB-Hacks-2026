@@ -1,8 +1,8 @@
-# AGENTS
+# Backend Agent Flow Documentation
 
 ## Updated backend flow
 
-Source of truth: `/home/runner/work/UWB-Hacks-2026/UWB-Hacks-2026/backend/server.ts`
+Source of truth: `backend/server.ts`
 
 1. Load environment variables with `dotenv.config()`.
 2. Create an Express app.

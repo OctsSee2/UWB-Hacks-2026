@@ -4,7 +4,7 @@
 
 The backend currently uses a single Express server defined in:
 
-- `/home/runner/work/UWB-Hacks-2026/UWB-Hacks-2026/backend/server.ts`
+- `backend/server.ts`
 
 Execution flow:
 
