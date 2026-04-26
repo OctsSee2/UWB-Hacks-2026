@@ -22,15 +22,16 @@ The project vision is a shopping assistant that:
 - Detects products from frontend pages
 - Enriches product data using barcode/category anchors and external APIs
 - Produces product **inferences** (reputation, origin, functionality, pricing, reviews, ethics, environmental impact, recalls, etc.)
-- Returns those inferences to frontend UX
+- Builds an **AuditTrail** of every calculation step and source used
+- Returns `RawDataInferences` and `CalculationData` to the frontend UX
   
 ##TypeScript types reference
 
 All types live in `types/`. Agents should read these before generating or editing any data-model code.
 
 ### `ProductType` (`types/product_types.ts`)
-Enum of broad product categories. Current values: `Clothing`, `Electronic`.
-More specific subtypes (Shirt, Pants, Phone, Laptop, etc.) are listed in `product_types.txt` and should be added to this enum as the model matures.
+Enum of broad product categories (e.g. Tables, Bananas, Gaming PCs, Lip Gloss, Blenders, Shelves, TVs). Current values: `Clothing`, `Electronic`.
+More specific subtypes are listed in `product_types.txt` and should be added to this enum as the model matures.
 
 ### `ScrapedData` (`types/scraped_data.ts`)
 Data extracted directly from a product webpage before any AI enrichment:
@@ -47,7 +48,34 @@ Structured enrichment object built after querying external APIs. Fields currentl
 - `companyReputation: CompanyReputation`
 - `countryOrigin: Country | null`
 
-Planned fields (still TODO): functionality, price, ingredients, user review sentiment, alternative products, healthiness, FDA info, product recalls, shipping info, carbon footprint, overall ethics rating.
+Fields to be added (per `backend_flow.txt`):
+- `functionality`
+- `price`
+- `ingredients`
+- `userReviewSentiment` — aggregate sentiment plus individual user reviews
+- `alternativeProducts` — alternatives on other platforms, each with their own inferences
+- `healthiness`
+- `fdaInformation`
+- `productRecalls`
+- `shippingInfo` — includes environment impact and fuel usage
+- `carbonFootprint`
+- `overallEthicsRating` — covers labor conditions, environment, animal cruelty, etc.
+
+### `CalculationData` (`types/calculation_data.ts`) — planned
+Object that documents the reasoning behind a single inference entry:
+- `steps: CalculationStep[]`
+- `sources: CalculationSource[]`
+
+### `CalculationStep` (`types/calculation_step.ts`) — planned
+A single action performed during a calculation, described in plain English:
+- `action: string`
+
+### `CalculationSource` (`types/calculation_source.ts`) — planned
+A linkable source (URL, API, or other) used during a calculation:
+- `source: string` — URL, API name, or other reference
+
+### `AuditTrail` (`types/audit_trail.ts`) — planned
+Array of `CalculationData` objects sorted in reverse chronological order (most recent first). Pushed to the frontend alongside `RawDataInferences` so users can inspect how each inference was derived.
 
 ### `AIInterpretedInference` (`types/ai_interpreted_inference.ts`)
 AI-generated layer on top of `RawDataInference`. Currently an empty interface — to be filled as the AI interpretation layer is designed.
