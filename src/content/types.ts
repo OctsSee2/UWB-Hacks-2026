@@ -74,17 +74,6 @@ export type Alternative = {
   url?: string;
 };
 
-export type ImpactStats = {
-  savedKg: string;
-  nextMilestone: string;
-  progress: number;
-  milesNotDriven: string;
-  dayStreak: string;
-  treesWorth: string;
-  purchasesSwitched: string;
-  flightAmount: string;
-  flightLabel: string;
-};
 
 export type DemoAnalysisData = {
   productTitle: string;
@@ -106,7 +95,6 @@ export type DemoAnalysisData = {
   savingsText: string;
   savingsAmount: string;
   savingsComparison: string;
-  impact: ImpactStats;
 };
 
 export type ViewName = "analysis" | "alternatives" | "impact" | "onboarding" | "settings";

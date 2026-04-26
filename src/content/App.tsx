@@ -46,7 +46,7 @@ type DemoPanelProps = {
   isAnalyzing?: boolean;
 };
 
-type ImpactPanelProps = { active: boolean; analysis: DemoAnalysisData; totalCO2Saved: number; goalKg: number };
+type ImpactPanelProps = { active: boolean; totalCO2Saved: number; goalKg: number };
 
 type SettingsPanelProps = {
   active: boolean;
@@ -245,11 +245,15 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
     setGoalKg(newGoalKg);
   };
 
+  useEffect(() => {
+    const percent = Math.min(100, Math.round((totalCO2Saved / (goalKg || 100)) * 100));
+    void chrome.storage.local.set({ emissionSavingsPercent: percent });
+  }, [totalCO2Saved, goalKg]);
+
   const handleSetCO2 = (value: number) => {
     setTotalCO2Saved(value);
     const CO2_KEY = "carboncart_co2saved_v1";
     localStorage.setItem(CO2_KEY, String(value));
-    void chrome.storage.local.set({ emissionSavingsPercent: value });
   };
 
   const onboardingMode = view === "onboarding";
@@ -294,7 +298,7 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
             ethicsScoreClass={ethicsScoreClass}
           />
           <AlternativesPanel active={view === "alternatives"} analysis={analysis} isAnalyzing={isAnalyzing} />
-          <ImpactPanel active={view === "impact"} analysis={analysis} totalCO2Saved={totalCO2Saved} goalKg={goalKg} />
+          <ImpactPanel active={view === "impact"} totalCO2Saved={totalCO2Saved} goalKg={goalKg} />
           <SettingsPanel
             active={view === "settings"}
             zip={zip}

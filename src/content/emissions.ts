@@ -626,17 +626,6 @@ function buildDemoAnalysisData(
     savingsText: "",
     savingsAmount: "",
     savingsComparison: "",
-    impact: {
-      savedKg: "0",
-      nextMilestone: "0 of 100 kg to next milestone",
-      progress: 0,
-      milesNotDriven: "0",
-      dayStreak: "0",
-      treesWorth: "0",
-      purchasesSwitched: "0",
-      flightAmount: "0",
-      flightLabel: "",
-    },
   };
 }
 

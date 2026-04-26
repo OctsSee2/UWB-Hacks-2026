@@ -1,3 +1,4 @@
+import { getMostLikelyComponentCountry } from "./origins";
 import type { OriginEstimate, ScrapedProduct } from "./types";
 
 const DEFAULT_COORDINATES = { latitude: 39.8283, longitude: -98.5795 };
@@ -212,16 +213,6 @@ function getCountryFallback(country: string): OriginEstimate {
   const key = country.trim().toLowerCase();
   const coords = countryCoordinates[key] ?? DEFAULT_COORDINATES;
   return buildEstimate(country, "country", "very low", coords.latitude, coords.longitude, undefined, country);
-}
-
-function getMostLikelyComponentCountry(componentOrigins: Record<string, string[]>): string | null {
-  const counts = Object.values(componentOrigins).flat().reduce<Record<string, number>>((acc, country) => {
-    acc[country] = (acc[country] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return sorted.length ? sorted[0][0] : null;
 }
 
 export async function resolveShippingOrigin(

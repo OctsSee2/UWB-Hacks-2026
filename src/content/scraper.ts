@@ -216,15 +216,3 @@ export function scrapeProductData(): ProductData {
   };
 }
 
-const SCRAPER_REQUEST_MESSAGE = "__carbonCartScrapeProductDataRequest";
-const SCRAPER_RESPONSE_MESSAGE = "__carbonCartScrapeProductDataResponse";
-
-window.addEventListener("message", (event) => {
-  if (event.source !== window || !event.data || event.data.type !== SCRAPER_REQUEST_MESSAGE) {
-    return;
-  }
-
-  const data = scrapeProductData();
-  window.postMessage({ type: SCRAPER_RESPONSE_MESSAGE, payload: data }, "*");
-});
-

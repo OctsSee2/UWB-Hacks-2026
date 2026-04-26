@@ -48,7 +48,7 @@ function buildMarketplaceFallbackUrl(name: string, maker: string): string {
   return `https://www.amazon.com/s?k=${query}`;
 }
 
-app.get("/", (req: any, res: any) => {
+app.get("/", (_req: any, res: any) => {
   res.send("Backend running");
 });
 
@@ -79,7 +79,7 @@ Return ONLY valid JSON in this shape:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
 
@@ -148,7 +148,7 @@ Return ONLY valid JSON in this exact shape:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
 
