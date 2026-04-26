@@ -2,6 +2,8 @@ export const allowedSites: string[] = ["amazon.com", "target.com", "walmart.com"
 export const mountId = "carbon-cart-root";
 export const onboardingKey = "carboncart_onboarded_v1";
 export const bubblePositionKey = "carboncart_bubble_position_v1";
+export const zipKey = "carboncart_zip_v1";
+export const goalKey = "carboncart_goal_v1";
 
 export const priceSelectors: string[] = [
   "#priceblock_ourprice",

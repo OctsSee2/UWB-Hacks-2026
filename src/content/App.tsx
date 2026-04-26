@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { onboardingKey } from "./config";
+import { goalKey, onboardingKey, zipKey } from "./config";
 import { readTotalCO2Saved } from "./co2Storage";
 import { setupDraggableBubble } from "./drag";
 import { calculateProductAnalysis, getDemoAnalysisData } from "./emissions";
@@ -7,9 +7,9 @@ import { IconArrow, IconBolt, IconCheck, IconInfo, IconLeaf, IconLogo } from "./
 import { scrapeProductData } from "./scraper";
 import type { DemoAnalysisData, ViewName } from "./types";
 
-type CarbonCartAppProps = {
-  productTitle: string;
-};
+// ── Types ────────────────────────────────────────────────────
+
+type CarbonCartAppProps = { productTitle: string };
 
 type HeaderProps = {
   onClose: () => void;
@@ -24,7 +24,7 @@ type TabsProps = {
 
 type OnboardingPanelProps = {
   active: boolean;
-  onStart: () => void;
+  onComplete: (zip: string, goalKg: number) => void;
 };
 
 type AnalysisPanelProps = {
@@ -38,26 +38,41 @@ type AnalysisPanelProps = {
   ethicsScoreClass: EmissionsLevelClass;
 };
 
-type DemoPanelProps = {
-  active: boolean;
-  analysis: DemoAnalysisData;
-};
+type DemoPanelProps = { active: boolean; analysis: DemoAnalysisData };
 
-type ImpactPanelProps = {
+type ImpactPanelProps = { active: boolean; analysis: DemoAnalysisData };
+
+type SettingsPanelProps = {
   active: boolean;
-  analysis: DemoAnalysisData;
+  zip: string;
+  goalKg: number;
   totalCO2Saved: number;
-  onSetTotalCO2Saved: (value: number) => void;
+  onSave: (zip: string, goalKg: number) => void;
+  onSetTotalCO2Saved: (val: number) => void;
 };
 
 type TabView = Exclude<ViewName, "onboarding">;
 type EmissionsLevelClass = "low" | "medium" | "high";
 
-function getEmissionsLevelClass(level: string): EmissionsLevelClass {
-  const normalized = level.toLowerCase();
+// ── Constants ────────────────────────────────────────────────
 
-  if (normalized.includes("low")) return "low";
-  if (normalized.includes("medium")) return "medium";
+const GOAL_OPTIONS: { kg: number; context: string }[] = [
+  { kg: 30,  context: "≈ 120 miles not driven" },
+  { kg: 50,  context: "≈ 200 miles not driven" },
+  { kg: 100, context: "≈ 400 miles not driven" },
+  { kg: 200, context: "≈ 800 miles not driven" },
+];
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function isValidZip(zip: string): boolean {
+  return /^\d{5}$/.test(zip);
+}
+
+function getEmissionsLevelClass(level: string): EmissionsLevelClass {
+  const n = level.toLowerCase();
+  if (n.includes("low")) return "low";
+  if (n.includes("medium")) return "medium";
   return "high";
 }
 
@@ -67,6 +82,8 @@ function getEthicsScoreClass(score: number): EmissionsLevelClass {
   return "high";
 }
 
+// ── CarbonCartApp ────────────────────────────────────────────
+
 export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const badgeRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -75,18 +92,18 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
   const [isOnboarded, setIsOnboarded] = useState(
     () => localStorage.getItem(onboardingKey) === "1"
   );
+  const [zip, setZip] = useState(() => localStorage.getItem(zipKey) || "");
+  const [goalKg, setGoalKg] = useState(() => {
+    const saved = localStorage.getItem(goalKey);
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [totalCO2Saved, setTotalCO2Saved] = useState(() => readTotalCO2Saved());
 
-  const handleSetCO2 = (value: number) => {
-    setTotalCO2Saved(value);
-    // Persist to storage
-    const CO2_KEY = "carboncart_co2saved_v1";
-    localStorage.setItem(CO2_KEY, String(value));
-    void chrome.storage.local.set({ emissionSavingsPercent: value });
-  };
-
   const productData = useMemo(() => scrapeProductData(), [productTitle]);
-  const initialAnalysis = useMemo(() => getDemoAnalysisData(productData), [productData]);
+  const initialAnalysis = useMemo(
+    () => getDemoAnalysisData(productData, zip || undefined),
+    [productData, zip]
+  );
   const [analysis, setAnalysis] = useState<DemoAnalysisData>(initialAnalysis);
   const [showAudit, setShowAudit] = useState(false);
   const displayTitle = analysis.productTitle || productTitle;
@@ -100,30 +117,16 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
 
   useEffect(() => {
     console.log("Scraped Product:", productData);
-
-    chrome.runtime.sendMessage({
-      type: "PRODUCT_SCRAPED",
-      data: productData,
-    });
+    chrome.runtime.sendMessage({ type: "PRODUCT_SCRAPED", data: productData });
   }, [productData]);
 
   useEffect(() => {
     let isActive = true;
-
-    calculateProductAnalysis(productData)
-      .then((nextAnalysis) => {
-        if (isActive) {
-          setAnalysis(nextAnalysis);
-        }
-      })
-      .catch((error) => {
-        console.error("Product emissions analysis failed:", error);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [productData]);
+    calculateProductAnalysis(productData, zip || undefined)
+      .then((next) => { if (isActive) setAnalysis(next); })
+      .catch((err) => { console.error("Product emissions analysis failed:", err); });
+    return () => { isActive = false; };
+  }, [productData, zip]);
 
   useEffect(() => {
     if (!isOnboarded) {
@@ -136,28 +139,19 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
     const root = badgeRef.current?.closest(".cc-root");
     const badge = badgeRef.current;
     if (!(root instanceof HTMLElement) || !badge) return undefined;
-
-    return setupDraggableBubble(root, badge, () => {
-      setSuppressToggleUntil(Date.now() + 250);
-    });
+    return setupDraggableBubble(root, badge, () => setSuppressToggleUntil(Date.now() + 250));
   }, []);
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const setPanelView = (nextView: ViewName) => {
-    setView(nextView);
-  };
+  const setPanelView = (v: ViewName) => setView(v);
 
   const togglePopup = () => {
     if (Date.now() < suppressToggleUntil) return;
-
     if (open) {
       setOpen(false);
     } else {
@@ -166,10 +160,28 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
     }
   };
 
-  const completeOnboarding = () => {
+  const completeOnboarding = (newZip: string, newGoalKg: number) => {
+    localStorage.setItem(zipKey, newZip);
+    localStorage.setItem(goalKey, String(newGoalKg));
     localStorage.setItem(onboardingKey, "1");
+    setZip(newZip);
+    setGoalKg(newGoalKg);
     setIsOnboarded(true);
     setPanelView("analysis");
+  };
+
+  const handleSettingsSave = (newZip: string, newGoalKg: number) => {
+    localStorage.setItem(zipKey, newZip);
+    localStorage.setItem(goalKey, String(newGoalKg));
+    setZip(newZip);
+    setGoalKg(newGoalKg);
+  };
+
+  const handleSetCO2 = (value: number) => {
+    setTotalCO2Saved(value);
+    const CO2_KEY = "carboncart_co2saved_v1";
+    localStorage.setItem(CO2_KEY, String(value));
+    void chrome.storage.local.set({ emissionSavingsPercent: value });
   };
 
   const onboardingMode = view === "onboarding";
@@ -198,24 +210,34 @@ export function CarbonCartApp({ productTitle }: CarbonCartAppProps) {
             emissionsLevelClass={emissionsLevelClass}
           />
           <Tabs view={view} onChange={setPanelView} />
-          <OnboardingPanel active={view === "onboarding"} onStart={completeOnboarding} />
+          <OnboardingPanel active={view === "onboarding"} onComplete={completeOnboarding} />
           <AnalysisPanel
             active={view === "analysis"}
             analysis={analysis}
             productTitle={displayTitle}
             onSeeAlternatives={() => setPanelView("alternatives")}
             showAudit={showAudit}
-            onToggleAudit={() => setShowAudit((current) => !current)}
+            onToggleAudit={() => setShowAudit((c) => !c)}
             emissionsLevelClass={emissionsLevelClass}
             ethicsScoreClass={ethicsScoreClass}
           />
           <AlternativesPanel active={view === "alternatives"} analysis={analysis} />
-          <ImpactPanel active={view === "impact"} analysis={analysis} totalCO2Saved={totalCO2Saved} onSetTotalCO2Saved={handleSetCO2} />
+          <ImpactPanel active={view === "impact"} analysis={analysis} />
+          <SettingsPanel
+            active={view === "settings"}
+            zip={zip}
+            goalKg={goalKg}
+            totalCO2Saved={totalCO2Saved}
+            onSave={handleSettingsSave}
+            onSetTotalCO2Saved={handleSetCO2}
+          />
         </div>
       </section>
     </>
   );
 }
+
+// ── Header ───────────────────────────────────────────────────
 
 function Header({ onClose, emissionsLevel, emissionsLevelClass }: HeaderProps) {
   return (
@@ -229,17 +251,20 @@ function Header({ onClose, emissionsLevel, emissionsLevelClass }: HeaderProps) {
           <span className="cc-pill-dot" />
           {emissionsLevel}
         </span>
-        <button className="cc-close" aria-label="Close CarbonCart" onClick={onClose}>{"\u00d7"}</button>
+        <button className="cc-close" aria-label="Close CarbonCart" onClick={onClose}>{"×"}</button>
       </div>
     </div>
   );
 }
 
+// ── Tabs ─────────────────────────────────────────────────────
+
 function Tabs({ view, onChange }: TabsProps) {
   const tabs: { id: TabView; label: string }[] = [
-    { id: "analysis", label: "Analysis" },
+    { id: "analysis",     label: "Analysis"  },
     { id: "alternatives", label: "Alternatives" },
-    { id: "impact", label: "My Impact" },
+    { id: "impact",       label: "My Impact" },
+    { id: "settings",     label: "Settings"  },
   ];
 
   return (
@@ -259,11 +284,20 @@ function Tabs({ view, onChange }: TabsProps) {
   );
 }
 
-function OnboardingPanel({ active, onStart }: OnboardingPanelProps) {
+// ── OnboardingPanel ──────────────────────────────────────────
+
+function OnboardingPanel({ active, onComplete }: OnboardingPanelProps) {
+  const [zip, setZipVal] = useState("");
+  const [zipTouched, setZipTouched] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<number | null>(null);
+
+  const zipError = zipTouched && !isValidZip(zip) ? "Enter a valid 5-digit US zip code" : "";
+  const canSubmit = isValidZip(zip) && selectedGoal !== null;
+
   return (
     <div className={`cc-panel cc-panel-onboarding ${active ? "" : "cc-hidden"}`} data-view="onboarding">
       <div className="cc-onb-hero">
-        <svg viewBox="0 0 160 160" width="140" height="140" style={{ position: "relative", zIndex: 1 }}>
+        <svg viewBox="0 0 160 160" width="120" height="120" style={{ position: "relative", zIndex: 1 }}>
           <path d="M36 60 h88 l-8 84 h-72 Z" fill="#A7C957" stroke="#386641" strokeWidth="3" strokeLinejoin="round" />
           <path d="M60 60 V46 a20 20 0 0 1 40 0 V60" fill="none" stroke="#386641" strokeWidth="3" strokeLinecap="round" />
           <path d="M80 46 C80 30 88 18 100 16" stroke="#386641" strokeWidth="3" strokeLinecap="round" fill="none" />
@@ -271,26 +305,65 @@ function OnboardingPanel({ active, onStart }: OnboardingPanelProps) {
           <path d="M84 36 C74 36 68 30 70 22 C80 22 86 28 84 36 Z" fill="#A7C957" stroke="#386641" strokeWidth="2.5" strokeLinejoin="round" />
         </svg>
       </div>
+
       <div className="cc-onb-content">
         <h1 className="cc-onb-h">Shop with the full picture</h1>
         <div className="cc-onb-body">
-          CarbonCart shows you the carbon footprint of what you're buying and suggests better local alternatives.
+          CarbonCart shows you the carbon footprint of what you're buying and suggests greener alternatives.
         </div>
-        <button className="cc-cta js-start" onClick={onStart}>Get started <IconArrow size={14} /></button>
+
+        <div className="cc-onb-form">
+          <div>
+            <label className="cc-field-label" htmlFor="cc-onb-zip">Your zip code</label>
+            <input
+              id="cc-onb-zip"
+              className={`cc-input${zipError ? " error" : ""}`}
+              type="text"
+              inputMode="numeric"
+              maxLength={5}
+              placeholder="e.g. 98011"
+              value={zip}
+              onChange={(e) => setZipVal(e.target.value.replace(/\D/g, "").slice(0, 5))}
+              onBlur={() => setZipTouched(true)}
+            />
+            {zipError && <div className="cc-field-error">{zipError}</div>}
+          </div>
+
+          <div>
+            <label className="cc-field-label">Your carbon savings goal</label>
+            <div className="cc-goal-grid">
+              {GOAL_OPTIONS.map((opt) => (
+                <button
+                  key={opt.kg}
+                  type="button"
+                  className={`cc-goal-chip${selectedGoal === opt.kg ? " selected" : ""}`}
+                  onClick={() => setSelectedGoal(opt.kg)}
+                >
+                  <div className="cc-goal-chip-kg">{opt.kg} kg CO₂</div>
+                  <div className="cc-goal-chip-ctx">{opt.context}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <button
+          className="cc-cta"
+          disabled={!canSubmit}
+          onClick={() => { if (canSubmit) onComplete(zip, selectedGoal!); }}
+        >
+          Get started <IconArrow size={14} />
+        </button>
       </div>
     </div>
   );
 }
 
+// ── AnalysisPanel ────────────────────────────────────────────
+
 function AnalysisPanel({
-  active,
-  analysis,
-  productTitle,
-  onSeeAlternatives,
-  showAudit,
-  onToggleAudit,
-  emissionsLevelClass,
-  ethicsScoreClass,
+  active, analysis, productTitle, onSeeAlternatives,
+  showAudit, onToggleAudit, emissionsLevelClass, ethicsScoreClass,
 }: AnalysisPanelProps) {
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="analysis">
@@ -317,7 +390,9 @@ function AnalysisPanel({
             <span className={`cc-bignum ${emissionsLevelClass}`}>{analysis.carbonKg}</span>
             <span className="cc-bignum-unit">kg CO2e</span>
           </div>
-          <div className="cc-progress"><div className={`cc-progress-fill ${emissionsLevelClass}`} style={{ width: `${analysis.carbonPercent}%` }} /></div>
+          <div className="cc-progress">
+            <div className={`cc-progress-fill ${emissionsLevelClass}`} style={{ width: `${analysis.carbonPercent}%` }} />
+          </div>
           {showAudit && (
             <div style={{ marginTop: "12px", padding: "12px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.12)" }}>
               <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px" }}>Calculation details</div>
@@ -327,17 +402,17 @@ function AnalysisPanel({
                     <span>{entry.title}</span>
                     <span style={{ textAlign: "right" }}>{entry.value}</span>
                   </div>
-                  {entry.description ? (
+                  {entry.description && (
                     <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.8 }}>{entry.description}</div>
-                  ) : null}
+                  )}
                 </div>
               ))}
             </div>
           )}
           <div className="cc-pill-row">
-            <span className="cc-pill">{"\u2248"} {analysis.drivingEquivalent}</span>
-            <span className="cc-pill">{"\u2248"} {analysis.treeGrowthEquivalent}</span>
-            <span className="cc-pill">{"\u2248"} {analysis.phoneChargeEquivalent}</span>
+            <span className="cc-pill">{"≈"} {analysis.drivingEquivalent}</span>
+            <span className="cc-pill">{"≈"} {analysis.treeGrowthEquivalent}</span>
+            <span className="cc-pill">{"≈"} {analysis.phoneChargeEquivalent}</span>
           </div>
           <div className="cc-source">{analysis.source}</div>
         </div>
@@ -348,7 +423,9 @@ function AnalysisPanel({
             <span className={`cc-bignum ${ethicsScoreClass}`}>{analysis.ethicsScore}</span>
             <span className="cc-bignum-suffix">/100</span>
           </div>
-          <div className="cc-progress"><div className={`cc-progress-fill ${ethicsScoreClass}`} style={{ width: `${analysis.ethicsScore}%` }} /></div>
+          <div className="cc-progress">
+            <div className={`cc-progress-fill ${ethicsScoreClass}`} style={{ width: `${analysis.ethicsScore}%` }} />
+          </div>
           <div className="cc-pill-row">
             {analysis.ethicsTags.map((tag) => <span key={tag} className="cc-pill ghost">{tag}</span>)}
           </div>
@@ -366,7 +443,7 @@ function AnalysisPanel({
           </div>
         </div>
 
-        <button className="cc-cta js-see-alternatives" onClick={onSeeAlternatives}>
+        <button className="cc-cta" onClick={onSeeAlternatives}>
           See {analysis.alternativesCount} greener alternatives <IconArrow size={14} />
         </button>
       </div>
@@ -374,27 +451,29 @@ function AnalysisPanel({
   );
 }
 
+// ── AlternativesPanel ────────────────────────────────────────
+
 function AlternativesPanel({ active, analysis }: DemoPanelProps) {
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="alternatives">
       <div className="cc-body">
         <div className="cc-cap" style={{ padding: "4px 2px 0" }}>Greener choices near you</div>
 
-        {analysis.alternatives.map((alternative) => (
-          <div className="cc-alt" key={alternative.name}>
+        {analysis.alternatives.map((alt) => (
+          <div className="cc-alt" key={alt.name}>
             <div className="cc-alt-top">
               <div className="cc-alt-thumb"><IconLogo size={20} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="cc-alt-name">{alternative.name}</div>
-                <div className="cc-alt-maker">{alternative.maker}</div>
+                <div className="cc-alt-name">{alt.name}</div>
+                <div className="cc-alt-maker">{alt.maker}</div>
               </div>
             </div>
             <div className="cc-alt-data">
-              <span className="cc-pill sage">{alternative.carbon}</span>
-              <span className="cc-pill sage">{alternative.ethics}</span>
-              <span className="cc-pill ghost">{alternative.price}</span>
+              <span className="cc-pill sage">{alt.carbon}</span>
+              <span className="cc-pill sage">{alt.ethics}</span>
+              <span className="cc-pill ghost">{alt.price}</span>
             </div>
-            <div className="cc-alt-tags">{alternative.tags}</div>
+            <div className="cc-alt-tags">{alt.tags}</div>
           </div>
         ))}
 
@@ -407,16 +486,109 @@ function AlternativesPanel({ active, analysis }: DemoPanelProps) {
   );
 }
 
-function ImpactPanel({ active, analysis, totalCO2Saved, onSetTotalCO2Saved }: ImpactPanelProps) {
-  const impact = analysis.impact;
+// ── ImpactPanel ──────────────────────────────────────────────
 
+function ImpactPanel({ active, analysis }: ImpactPanelProps) {
+  const impact = analysis.impact;
   return (
     <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="impact">
       <div className="cc-body">
-        {/* DEV: Emissions savings percent slider */}
-        <div className="cc-dev-slider">
+        <div className="cc-hero-saved">
+          <div className="cc-label" style={{ marginBottom: "6px" }}>You've saved</div>
+          <div className="cc-big">{impact.savedKg}<span className="cc-big-unit">kg CO2</span></div>
+          <div className="cc-milestone-row">
+            <span>{impact.nextMilestone}</span>
+            <span style={{ color: "var(--cc-sage)", fontWeight: 600 }}>{impact.progress}%</span>
+          </div>
+          <div className="cc-progress cc-progress--thin">
+            <div className="cc-progress-fill sage" style={{ width: `${impact.progress}%` }} />
+          </div>
+        </div>
+
+        <div className="cc-grid-2x3">
+          <div className="cc-stat"><div className="cc-stat-num">{impact.milesNotDriven}</div><div className="cc-stat-label">miles not driven</div></div>
+          <div className="cc-stat"><div className="cc-stat-num">{impact.dayStreak}</div><div className="cc-stat-label">day streak</div></div>
+          <div className="cc-stat"><div className="cc-stat-num">{impact.treesWorth}</div><div className="cc-stat-label">trees' worth</div></div>
+          <div className="cc-stat"><div className="cc-stat-num">{impact.purchasesSwitched}</div><div className="cc-stat-label">purchases switched</div></div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ── SettingsPanel ────────────────────────────────────────────
+
+function SettingsPanel({ active, zip, goalKg, totalCO2Saved, onSave, onSetTotalCO2Saved }: SettingsPanelProps) {
+  const [draftZip, setDraftZip] = useState(zip);
+  const [draftGoal, setDraftGoal] = useState<number | null>(goalKg || null);
+  const [zipTouched, setZipTouched] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setDraftZip(zip);
+    setDraftGoal(goalKg || null);
+    setZipTouched(false);
+  }, [zip, goalKg]);
+
+  const zipError = zipTouched && !isValidZip(draftZip) ? "Enter a valid 5-digit US zip code" : "";
+  const canSave = isValidZip(draftZip);
+
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave(draftZip, draftGoal ?? goalKg);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className={`cc-panel ${active ? "" : "cc-hidden"}`} data-view="settings">
+      <div className="cc-settings-body">
+
+        <div className="cc-settings-section">
+          <div className="cc-settings-section-title">Your location</div>
+          <label className="cc-field-label" htmlFor="cc-settings-zip">Zip code</label>
+          <input
+            id="cc-settings-zip"
+            className={`cc-input${zipError ? " error" : ""}`}
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            placeholder="e.g. 98011"
+            value={draftZip}
+            onChange={(e) => setDraftZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            onBlur={() => setZipTouched(true)}
+          />
+          {zipError && <div className="cc-field-error">{zipError}</div>}
+        </div>
+
+        <div className="cc-settings-section">
+          <div className="cc-settings-section-title">Carbon savings goal</div>
+          <div className="cc-goal-grid">
+            {GOAL_OPTIONS.map((opt) => (
+              <button
+                key={opt.kg}
+                type="button"
+                className={`cc-goal-chip${draftGoal === opt.kg ? " selected" : ""}`}
+                onClick={() => setDraftGoal(opt.kg)}
+              >
+                <div className="cc-goal-chip-kg">{opt.kg} kg CO₂</div>
+                <div className="cc-goal-chip-ctx">{opt.context}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="cc-settings-save-row">
+          <button className="cc-cta" style={{ flex: 1 }} disabled={!canSave} onClick={handleSave}>
+            {saved ? "Saved ✓" : "Save settings"}
+          </button>
+        </div>
+
+        <div className="cc-dev-section">
+          <div className="cc-settings-section-title">Dev tools</div>
           <div style={{ fontSize: "11px", color: "var(--cc-text-secondary)", marginBottom: "6px", fontWeight: 500 }}>
-            DEV: Emissions Savings (%)
+            CO₂ Saved
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <input
@@ -428,30 +600,12 @@ function ImpactPanel({ active, analysis, totalCO2Saved, onSetTotalCO2Saved }: Im
               onChange={(e) => onSetTotalCO2Saved(parseFloat(e.target.value))}
               style={{ flex: 1, cursor: "pointer" }}
             />
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--cc-moss)", minWidth: "28px" }}>
-              {totalCO2Saved.toFixed(0)}
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--cc-moss)", minWidth: "36px" }}>
+              {totalCO2Saved.toFixed(0)} kg
             </div>
           </div>
         </div>
 
-        <div className="cc-hero-saved">
-          <div className="cc-label" style={{ marginBottom: "6px" }}>You've saved</div>
-          <div className="cc-big">{impact.savedKg}<span className="cc-big-unit">kg CO2</span></div>
-          <div className="cc-milestone-row"><span>{impact.nextMilestone}</span><span style={{ color: "var(--cc-sage)", fontWeight: 600 }}>{impact.progress}%</span></div>
-          <div className="cc-progress cc-progress--thin"><div className="cc-progress-fill sage" style={{ width: `${impact.progress}%` }} /></div>
-        </div>
-
-        <div className="cc-grid-2x3">
-          <div className="cc-stat"><div className="cc-stat-num">{impact.milesNotDriven}</div><div className="cc-stat-label">miles not driven</div></div>
-          <div className="cc-stat"><div className="cc-stat-num">{impact.dayStreak}</div><div className="cc-stat-label">day streak</div></div>
-          <div className="cc-stat"><div className="cc-stat-num">{impact.treesWorth}</div><div className="cc-stat-label">trees' worth</div></div>
-          <div className="cc-stat"><div className="cc-stat-num">{impact.purchasesSwitched}</div><div className="cc-stat-label">purchases switched</div></div>
-        </div>
-
-        <div className="cc-stat cc-stat--flight">
-          <div className="cc-stat-num">{impact.flightAmount}</div>
-          <div className="cc-stat-label">{impact.flightLabel}</div>
-        </div>
       </div>
     </div>
   );

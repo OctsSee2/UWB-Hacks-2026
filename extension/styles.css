@@ -893,6 +893,174 @@
 
 /* ── End Smog Monster ─────────────────────────────────────── */
 
+/* ── Onboarding form ─────────────────────────────────────── */
+
+.cc-onb-hero {
+  height: 180px;
+}
+
+.cc-onb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.cc-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cc-text);
+  margin-bottom: 6px;
+}
+
+.cc-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1.5px solid rgba(28, 28, 28, 0.14);
+  border-radius: var(--cc-r-btn);
+  font: inherit;
+  font-size: 14px;
+  color: var(--cc-text);
+  background: var(--cc-surface);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.cc-input:focus {
+  border-color: var(--cc-sage);
+}
+
+.cc-input.error {
+  border-color: var(--cc-high-fg);
+}
+
+.cc-field-error {
+  font-size: 11px;
+  color: var(--cc-high-fg);
+  margin-top: 5px;
+}
+
+.cc-goal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cc-goal-chip {
+  appearance: none;
+  border: 1.5px solid rgba(28, 28, 28, 0.14);
+  border-radius: var(--cc-r-card);
+  background: var(--cc-surface);
+  padding: 10px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cc-goal-chip:hover {
+  border-color: var(--cc-sage);
+}
+
+.cc-goal-chip.selected {
+  border-color: var(--cc-sage);
+  background: var(--cc-low-bg);
+}
+
+.cc-goal-chip-kg {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cc-moss);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.cc-goal-chip.selected .cc-goal-chip-kg {
+  color: var(--cc-sage);
+}
+
+.cc-goal-chip-ctx {
+  font-size: 10px;
+  color: var(--cc-text-secondary);
+  line-height: 1.3;
+}
+
+.cc-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Settings panel ──────────────────────────────────────── */
+
+.cc-settings-body {
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-settings-section {
+  background: var(--cc-surface);
+  border-radius: var(--cc-r-card);
+  padding: 14px;
+}
+
+.cc-settings-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cc-text-secondary);
+  margin-bottom: 10px;
+}
+
+.cc-settings-save-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-settings-saved {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cc-sage);
+  white-space: nowrap;
+}
+
+/* ── Dev tools section ───────────────────────────────────── */
+
+.cc-dev-section {
+  background: rgba(56, 102, 65, 0.06);
+  border: 1.5px dashed rgba(56, 102, 65, 0.35);
+  border-radius: var(--cc-r-card);
+  padding: 14px;
+}
+
+.cc-dev-section .cc-settings-section-title {
+  color: var(--cc-sage);
+}
+
+.cc-dev-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-dev-field .cc-input {
+  flex: 1;
+  height: 38px;
+  font-size: 13px;
+}
+
+.cc-dev-field-unit {
+  font-size: 12px;
+  color: var(--cc-text-secondary);
+  white-space: nowrap;
+}
+
 @media (max-width: 520px) {
   .cc-root.cc-fixed {
     right: 8px;

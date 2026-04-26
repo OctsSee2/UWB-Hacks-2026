@@ -371,18 +371,18 @@ function buildDemoAnalysisData(
   };
 }
 
-export function getDemoAnalysisData(productData: ProductData): DemoAnalysisData {
+export function getDemoAnalysisData(productData: ProductData, buyerZip = DEFAULT_BUYER_ZIP): DemoAnalysisData {
   const classification = getClassificationFromScraper(productData);
   const emissions = buildEmissionsResultWithOrigin(
     productData,
     classification,
     getInitialOriginEstimate(productData),
-    DEFAULT_BUYER_ZIP
+    buyerZip
   );
   return buildDemoAnalysisData(emissions, productData, classification);
 }
 
-export async function calculateProductAnalysis(productData: ProductData): Promise<DemoAnalysisData> {
+export async function calculateProductAnalysis(productData: ProductData, buyerZip = DEFAULT_BUYER_ZIP): Promise<DemoAnalysisData> {
   const classification = await getClassificationForEmissions(productData);
   const componentOrigins = getOriginsForComponents(classification.components);
   const originEstimate = await resolveShippingOrigin(productData, componentOrigins);
@@ -390,7 +390,7 @@ export async function calculateProductAnalysis(productData: ProductData): Promis
     productData,
     classification,
     originEstimate,
-    DEFAULT_BUYER_ZIP
+    buyerZip
   );
   return buildDemoAnalysisData(emissions, productData, classification);
 }

@@ -108,4 +108,4 @@ export type DemoAnalysisData = {
   impact: ImpactStats;
 };
 
-export type ViewName = "analysis" | "alternatives" | "impact" | "onboarding";
+export type ViewName = "analysis" | "alternatives" | "impact" | "onboarding" | "settings";
